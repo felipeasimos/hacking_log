@@ -1,5 +1,12 @@
 # The Stack
 
+sources:
+https://stackoverflow.com/questions/19128291/stack-alignment-in-x64-assembly \
+https://stackoverflow.com/questions/5538079/why-alignment-is-16-bytes-on-64-bit-architecture \
+https://gcc.gnu.org/legacy-ml/gcc-help/2010-01/msg00113.html \
+https://stackoverflow.com/questions/4175281/what-does-it-mean-to-align-the-stack \
+https://forum.nasm.us/index.php?topic=1689.0
+
 It is the data structure used to do memory management in a program. It
 grows downwards (towards lower addresses). \
 The top of the stack is
@@ -140,3 +147,71 @@ Parameter 1 |
 
 10. If parameters were pushed to the stack, the next instructions are `pop`
 commands that take them out.
+
+## 64 Bit Caviat
+
+There are big differences for compiling a program for 32 bit and for 64
+bit. A change that usually get in the way of the usual buffer overflow
+logic is **Stack Alignment**. What this means is that the Stack Pointer
+will always point to an address that is multiple of 16. This happens is
+requirement of the ABI (application binary interface), probably due to
+SSE instructions (streaming SIMD extensions) requiring this alignment.
+
+For example, in the `simple.c` file we have the following code:
+
+```
+#include <stdio.h>
+
+int main(){
+
+	int x=3;
+	int y=4;
+
+	printf("x: %p\n", &x);
+	printf("y: %p\n", &y);
+
+	return 0;
+}
+```
+
+If we call `objdump -d -M intel-mnemonic simple` after compilation, we get
+the assembly code. If we take a look at the `main` function we will find
+the lines:
+
+```
+  4005ad:	c7 45 f0 03 00 00 00 	mov    DWORD PTR [rbp-0x10],0x3
+  4005b4:	c7 45 f4 04 00 00 00 	mov    DWORD PTR [rbp-0xc],0x4
+```
+
+Where `x` is being given the value of `3` in the first line and `y` is
+being given the value of `4` in the second.
+
+These are the only local variables in our program and yet, if we draw the
+layout of the stack using the addresses we get the following:
+
+0x10 = 16 \
+0xc = 12
+
+Higher Addresses (Bottom of the stack) |
+---------------------------------------|
+byte 1 (empty, where RBP points to) |
+byte 2 (empty) |
+byte 3 (empty) |
+byte 4 (empty) |
+byte 5 (empty) |
+byte 6 (empty) |
+byte 7 (empty) |
+byte 8 (empty) |
+byte 9 (fourth `y` byte) |
+byte 10 (third `y` byte) |
+byte 11 (second `y` byte) |
+byte 12 (first `y`byte) |
+byte 13 (fourth `x` byte) |
+byte 14 (third `x` byte) |
+byte 15 (second `x` byte) |
+byte 16 (first `x` byte, where RSP points to) |
+Lower Addresses (Top of the stack) |
+
+As you can see we have 8 bytes that are there just so we can have RSP
+pointing to a multiple of 16. If `x` and `y` occupied 17 bytes, then
+the RSP would be 32 bytes apart from the RBP.

@@ -1,4 +1,8 @@
-# Assembly Syntax Basics
+# Assembly Basics
+
+sources:
+http://www.cs.virginia.edu/~evans/cs216/guides/x86.html \
+https://stackoverflow.com/questions/1658294/whats-the-purpose-of-the-lea-instruction
 
 NOTE: based on the intel flavor syntax (`set disassembly-flavor intel`)
 
@@ -39,6 +43,10 @@ A list with a short description of some common assembly commands:
 
 * `push` - write the given value to the top of the stack, decrementing the
 Stack Pointer (since the stack grows downwards)
+
+* `pop` - take out the value from the top of the stack and write it to
+the given operand, incrementing the Stack Pointer (since the stack growns
+downwards)
 
 * `lea` - (load effective address) give the address of the right argument
 to the left argument. So when the right argument is an address that is
