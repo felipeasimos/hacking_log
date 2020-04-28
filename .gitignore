@@ -1,0 +1,16 @@
+
+# ignore everyhting ...
+*/*/*/*
+*/*/*
+*/*
+*
+
+# except files with extensions or Makefiles
+!*/*/*/*.*
+!*/*/*/Makefile
+!*/*/*.*
+!*/*/Makefile
+!*/*.*
+!*/Makefile
+!*.*
+!Makefile

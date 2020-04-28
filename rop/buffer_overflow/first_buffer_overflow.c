@@ -4,14 +4,14 @@
 
 int main(){
 
-	char password[16];
 	int passcheck=0;
+	char password[16];
 
+	//get user input
 	printf("Type in the password: ");
-
 	scanf("%s", (char*)&password);
 
-	//verification
+	//check if it is correct
 	if( strcmp(password, "password1") ){
 	
 		printf("\nACCESS DENIED\n");
@@ -22,6 +22,7 @@ int main(){
 		passcheck=1;
 	}
 
+	//get r00t
 	if( passcheck ){
 
 		system("/bin/sh");
