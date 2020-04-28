@@ -5,7 +5,12 @@ https://stackoverflow.com/questions/19128291/stack-alignment-in-x64-assembly \
 https://stackoverflow.com/questions/5538079/why-alignment-is-16-bytes-on-64-bit-architecture \
 https://gcc.gnu.org/legacy-ml/gcc-help/2010-01/msg00113.html \
 https://stackoverflow.com/questions/4175281/what-does-it-mean-to-align-the-stack \
-https://forum.nasm.us/index.php?topic=1689.0
+https://forum.nasm.us/index.php?topic=1689.0 \
+https://stackoverflow.com/questions/612443/why-does-the-mac-abi-require-16-byte-stack-alignment-for-x86-32
+
+There are big differences for compiling a program for 32 bit and for 64
+bit. A change that usually get in the way of the usual buffer overflow
+logic is
 
 It is the data structure used to do memory management in a program. It
 grows downwards (towards lower addresses). \
@@ -148,14 +153,14 @@ Parameter 1 |
 10. If parameters were pushed to the stack, the next instructions are `pop`
 commands that take them out.
 
-## 64 Bit Caviat
+## 64 Bit Alignment
 
-There are big differences for compiling a program for 32 bit and for 64
-bit. A change that usually get in the way of the usual buffer overflow
-logic is **Stack Alignment**. What this means is that the Stack Pointer
-will always point to an address that is multiple of 16. This happens is
-requirement of the ABI (application binary interface), probably due to
-SSE instructions (streaming SIMD extensions) requiring this alignment.
+There is some differences between the theory and pratice in the stack frame
+lifetime, one of them is **Stack Alignment**. What this means is that the
+Stack Pointer will always point to an address that is multiple of 16. This
+is requirement of the ABI (application binary interface), probably due to
+SSE instructions (streaming SIMD extensions) having a bad performance
+without this alignment.
 
 For example, in the `simple.c` file we have the following code:
 
