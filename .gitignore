@@ -1,16 +1,5 @@
-
-# ignore everyhting ...
-*/*/*/*
-*/*/*
-*/*
-*
-
-# except files with extensions or Makefiles
-!*/*/*/*.*
-!*/*/*/Makefile
-!*/*/*.*
-!*/*/Makefile
-!*/*.*
-!*/Makefile
-!*.*
-!Makefile
+# ignore all executables
+rop/*/*
+!rop/*/*.*
+!rop/*/Makefile
+!rop/*/
