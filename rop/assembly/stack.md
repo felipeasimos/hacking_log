@@ -162,6 +162,12 @@ is requirement of the ABI (application binary interface), probably due to
 SSE instructions (streaming SIMD extensions) having a bad performance
 without this alignment.
 
+The `gcc` compiler follow this rule, but i can be changed with the flag
+`-mpreferred-stack-boundary=n`, where `n` is a power of 2. 2 to the power
+of `n` will be the alignment used (default power is 4, hence the 16 bit
+alignment).
+
+
 For example, in the `simple.c` file we have the following code:
 
 ```
