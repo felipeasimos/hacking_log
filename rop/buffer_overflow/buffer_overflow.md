@@ -57,7 +57,7 @@ int main(){
 ```
 
 The program writes the input to a buffer and compare it to a constant
-string "password1". The variable passcheck changes value and is
+string "password1". The variable `passcheck` changes value and is
 ultimately the one responsible for allowing us to get a shell.
 
 The program behaves like so when we give it `hello` as the password:
@@ -140,7 +140,7 @@ passcheck (4 bytes) |
 Higher Addresses (bottom of the stack) |
 
 In our attempt to write too much A's we wrote way past the
-passcheck fourth byte, but all we needed to do was write a non-zero value
+`passcheck` fourth byte, but all we needed to do was write a non-zero value
 to the first one. So let's write 17 A's and see what happens:
 
 ```
