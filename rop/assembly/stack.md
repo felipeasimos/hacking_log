@@ -164,7 +164,7 @@ without this alignment.
 
 The `gcc` compiler follow this rule, but i can be changed with the flag
 `-mpreferred-stack-boundary=n`, where `n` is a power of 2. 2 to the power
-of `n` will be the alignment used (default power is 4, hence the 16 bit
+of `n` will be the alignment used (default power is 4, hence the 16 byte
 alignment).
 
 
