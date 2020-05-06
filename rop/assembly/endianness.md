@@ -3,6 +3,8 @@
 sources:
 https://betterexplained.com/articles/understanding-big-and-little-endian-byte-order/ \
 https://en.wikipedia.org/wiki/Endianness
+https://stackoverflow.com/questions/859535/how-do-i-convert-a-big-endian-struct-to-a-little-endian-struct
+https://stackoverflow.com/questions/1568057/ascii-strings-and-endianness
 
 ## The Problem
 
