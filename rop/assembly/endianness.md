@@ -48,12 +48,21 @@ Address | Value
 
 Here the least significant byte is at the lowest address.
 
+## Strings and Data Structures
+
+Endianess affects numeric values, like addresses, integers and floats. That
+said, strings will have the *same* order, despite the endianess being used.
+
+In data structures, the order in which their members appear in memory won't
+change. The only difference will be that numeric members will have the 
+memory that they occupy changed according to the endianness.
+
 ## Communication
 
 When sending data to another computer, in which endianness should we send
 it? Most machines nowadays use Little-Endian but Big-Endian is used when
-sending data to another computer and its what every computer expects to
-receive.
+sending data to another computer (it is the Network Byte Order) and its
+what every computer expects to receive.
 
 So it doesn't really matter which endianness the receiver uses, it only
 matters that the data is sent using Big-Endian. Once received the data
