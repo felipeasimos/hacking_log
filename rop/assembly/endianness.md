@@ -27,16 +27,16 @@ the highest.
 * Big-Endian - highest address is where the stream begins and it ends at
 the lowest.
 
-For example, let's say we have the number 108. With two bytes we would
-represent it as 0110 1100, where 1100 is the least significant byte and
-0110 is the most significant byte.
+For example, let's say we have the number 39270. With two bytes we would
+represent it as 10011001 01100110, where 01100110 is the least significant
+byte and 10011001 is the most significant byte.
 
 In Big-Endian, we would store this number in memory like so:
 
 Address | Value
 --------|--------
-0x1 | 1100
-0x0 | 0110
+0x1 | 01100110
+0x0 | 10011001
 
 Some say this is the most "intuitive" endianess, since the computer starts
 reading from the most significant byte just like we do.
@@ -45,8 +45,8 @@ In Little-Endian, we would store it like so:
 
 Address | Value
 --------|-------
-0x1 | 0110
-0x0 | 1100
+0x1 | 10011001
+0x0 | 01100110
 
 Here the least significant byte is at the lowest address.
 
