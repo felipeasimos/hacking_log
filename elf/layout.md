@@ -343,5 +343,3 @@ fixed-size entries.
 * __0x28__/__0x40__ From this point on these bytes don't belong to the
 Section Header Table but since the Section Header Table is located at
 the end of the file, there is probably nothing.
-
-
