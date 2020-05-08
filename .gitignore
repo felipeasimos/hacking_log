@@ -1,5 +1,10 @@
-# ignore all executables
+# ignore all executables in rop subfolder
 rop/*/*
 !rop/*/*.*
 !rop/*/Makefile
 !rop/*/
+
+# ignore all executables in elf subfolder
+elf/*
+!elf/Makefile
+!elf/*.*
