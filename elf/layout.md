@@ -11,6 +11,7 @@ https://en.wikipedia.org/wiki/Page_%28computer_memory%29 \
 https://stackoverflow.com/questions/4888067/how-to-get-linux-kernel-page-size-programmatically \
 https://greek0.net/elf.html \
 http://www.skyfree.org/linux/references/ELF_Format.pdf \
+https://linuxhint.com/understanding_elf_file_format/
 
 ## Basic Structure
 

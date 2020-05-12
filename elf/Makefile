@@ -8,3 +8,4 @@ all:
 	$(CC) $(CFILES) -o $(TARGET)
 clean:
 	rm $(TARGET)
+	rm test.i
