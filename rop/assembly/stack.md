@@ -155,18 +155,17 @@ commands that take them out.
 
 ## 64 Bit Alignment
 
-There is some differences between the theory and pratice in the stack frame
+There are some differences between the theory and pratice in the stack frame
 lifetime, one of them is **Stack Alignment**. What this means is that the
-Stack Pointer will always point to an address that is multiple of 16. This
-is requirement of the ABI (application binary interface), probably due to
-SSE instructions (streaming SIMD extensions) having a bad performance
-without this alignment.
+Stack Pointer will always point to an address that is multiple of 16
+(or 8 for 32 bit architectures). This is a requirement from the ABI
+(application binary interface), probably due to SSE instructions
+(streaming SIMD extensions) having a bad performance without this alignment.
 
-The `gcc` compiler follow this rule, but i can be changed with the flag
-`-mpreferred-stack-boundary=n`, where `n` is a power of 2. 2 to the power
-of `n` will be the alignment used (default power is 4, hence the 16 byte
-alignment).
-
+The `gcc` compiler follow this alignment rule, but i can be changed with
+the flag `-mpreferred-stack-boundary=n`, where `n` is a power of 2. 2 to
+the power of `n` will be the alignment used (default power is 4, hence the
+16 byte alignment).
 
 For example, in the `simple.c` file we have the following code:
 
