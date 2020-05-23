@@ -7,6 +7,7 @@ https://gcc.gnu.org/legacy-ml/gcc-help/2010-01/msg00113.html \
 https://stackoverflow.com/questions/4175281/what-does-it-mean-to-align-the-stack \
 https://forum.nasm.us/index.php?topic=1689.0 \
 https://stackoverflow.com/questions/612443/why-does-the-mac-abi-require-16-byte-stack-alignment-for-x86-32
+https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html
 
 There are big differences for compiling a program for 32 bit and for 64
 bit. A change that usually get in the way of the usual buffer overflow

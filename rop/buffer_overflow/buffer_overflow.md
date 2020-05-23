@@ -106,7 +106,7 @@ overwrote it and the program is terminated.
 
 * `-m32` compile to 32 bits. The code will still run on 64 bit architectures.
 If your compilation throws an error, try installing the `libc6-dev-i386`
-package in Linux.
+package in Linux. 
 
 * `-o` what comes after this flag will be the name of our executable.
 
