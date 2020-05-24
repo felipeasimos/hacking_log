@@ -4,7 +4,6 @@
 
 void impossible_shell(){
 
-	printf("how did you do it?😮");
 	system("/bin/sh");
 }
 

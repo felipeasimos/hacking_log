@@ -24,7 +24,6 @@ Our "victim" will be the program at `rip.c`:
 
 void impossible_shell(){
 
-	printf("how did you do it?😮");
 	system("/bin/sh");
 }
 
@@ -125,7 +124,7 @@ different though):
 All functions matching regular expression "impossible":
 
 Non-debugging symbols:
-0x080484db  impossible_shell
+0x0804849b  impossible_shell
 ```
 
 We now only need the distance from the buffer to the return address.
@@ -154,21 +153,60 @@ And just before calling `strncmp`:
 
 ```
 
+Obs .: In this case, all the information we just gathered using
+`gdb` could be fetched using `objdump -d -M intel-mnemonic rip`.
+
 In both snippets, the common address is **ebp-0x18**. Which means
 that after the 18th byte our buffer start writing EBP
 (which has 4 bytes) and then our target: EIP (also 4 bytes).
 
-All that is left to do now is write the exploit:
+All that is left to do now is write the payload and give it
+as the input to the program:
 
 ```
-python -c "print('A'*0x18 + 'BBBB' + '\xdb\x84\x04\x08')"
+./rip `python -c "print(b'A'*0x18 + b'BBBB' + b'\x9b\x84\x04\x08')"`
+```
+Or, using python3:
+```
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\x9b\x84\x04\x08')"`
 ```
 
-Obs.: My machine uses little-endian, that's why the address is
-backwards
+Here we have 24 (0x18) bytes to fill the space between the EBP
+and the start of the buffer, after that we have `'BBBB'` to fill
+the EBP, and finally we have the value that will be the new
+Return Address.
 
-To redirect the output of `python` as the input of `rip`:
+Obs.: My machine uses little-endian, that's why the address byte
+order is backwards. Yours is probably too (most are nowadays)
+
+Running any of the above commands will grant you a shell:
 
 ```
-./rip ``
+$
 ```
+
+Success! We did it! However, we did it in a really agressive
+way. When you exit the shell look what happens:
+
+```
+$ exit
+Segmentation Fault
+```
+
+A Segmentation Fault! Depending on what the program you are exploiting
+does this could have some undesired consequences and also somebody could
+be monitoring the system for crashing programs! Either way, it is usually
+a good idea to make sure your program return the execution flow of the
+program to normal after redirecting it.
+
+So, diving deeper into what happen: Why did the `Segmentation Fault`
+happened?
+
+When we force the program to go to `impossible_shell`, we aren't using
+the proper `call` command. We are just telling the program
+"Hey! Go there!" without giving him information how to get back. When
+`impossible_shell` ends and uses `leave` and `ret`, two functions that
+get previously pushed values from the stack, the `Segmentation Fault`
+happens, because just by overwriting the Instruction Pointer we aren't
+pushing the proper values that `leave` and `ret` will fetch from the
+stack later.

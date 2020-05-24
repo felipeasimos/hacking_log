@@ -65,3 +65,12 @@ is just an unconditional jump to another part of the code, but is
 variations, like `je`, `jne` and `jg` (there are orders) check the status
 flags to decide to make a jump or not. Every `jmp`-like command takes in
 one argument, which is the address they will jump to if conditions are met.
+
+* `call` - `push` the address of the next instruction to be called in the
+current function to the stack and change RIP/EIP value to the argument
+given to it.
+
+* `leave` - copy the value of RBP/EBP to RSP/ESP (shrinks stack to nothing)
+and then `pop` to RBP/EBP.
+
+* `ret` - `pop` to RIP/EIP. Called at the end of a function.

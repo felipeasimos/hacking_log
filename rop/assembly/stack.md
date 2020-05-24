@@ -34,7 +34,7 @@ of the stack.
 When a function is called (including main), the following happens:
 
 1. The parameters of the function are pushed to the stack (nothing happens
-if there are no parameters)
+if there are no parameters). This is done by the calling function.
 
 **RBP/EBP** = somewhere below Parameter 1 (in a higher address) \
 **RSP/ESP** = `Parameter 3` address in the stack
@@ -46,7 +46,9 @@ Parameter 1 |
 
 2. The address of the instruction that will be executed after the
 function is pushed to the stack (the address right after the one the 
-Instruction Pointer (RIP/EIP) is pointing to)
+Instruction Pointer (RIP/EIP) is pointing to). this is done by the
+`call` command in the calling function. This is the last command
+from the calling function before the called function takes over.
 
 **RBP/EBP** = somewhere below Parameter 1 (in a higher address) \
 **RSP/ESP** = `Return Address` address in the stack
@@ -57,7 +59,8 @@ Parameter 3 |
 Parameter 2 |
 Parameter 1 |
 
-3. Push the value of the Base Pointer (RBP/EBP) to the stack
+3. Push the value of the Base Pointer (RBP/EBP) to the stack. This
+is done by the called function, just like everything from here on.
 
 **RBP/EBP** = somewhere below `Parameter 1` (in a higher address) \
 **RSP/ESP** = `RBP/EBP value` address in the stack
