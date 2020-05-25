@@ -4,6 +4,7 @@ sources:
 http://www.eecg.toronto.edu/~amza/www.mindsec.com/files/x86regs.html \
 https://www.assemblylanguagetuts.com/x86-assembly-registers-explained/ \
 https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html
+https://www.ret2rop.com/2018/08/cpu-memory-and-buffer-overflow.html
 
 ## Layout and Syntax
 
@@ -155,7 +156,9 @@ RDX | EDX | DX | DL+DH
 	* The preferred register to be used in I/O, arithmetic, logic and data transfer
 	operations, like multiplication and division.
 
-	* store return value of functions (but it is volatile, data is overwritten after)
+	* store return value of functions
+
+	* volatile
 
 * ***Base Register (RBX|EBX|BX|BL|BH)***
 
@@ -263,6 +266,8 @@ Overflows attacks use them a lot.
 
 	* Used for string and memory array copying
 
+	* Source index for string operations
+
 * ***Destination Index (DI)***
 
 	* Perform the same functions as SI
@@ -271,6 +276,8 @@ Overflows attacks use them a lot.
 
 	* For string operations it is used to access memory locations
 	addressed by ES
+
+	* Destination index for string operations
 
 ### EFLAGS Register
 
