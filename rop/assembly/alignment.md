@@ -3,6 +3,12 @@
 sources:
 https://www.youtube.com/watch?v=OKjOZBaKlOc \
 https://en.wikipedia.org/wiki/Data_structure_alignment \
+https://stackoverflow.com/questions/19128291/stack-alignment-in-x64-assembly \
+https://stackoverflow.com/questions/5538079/why-alignment-is-16-bytes-on-64-bit-architecture \
+https://gcc.gnu.org/legacy-ml/gcc-help/2010-01/msg00113.html \
+https://stackoverflow.com/questions/4175281/what-does-it-mean-to-align-the-stack \
+https://forum.nasm.us/index.php?topic=1689.0 \
+https://stackoverflow.com/questions/612443/why-does-the-mac-abi-require-16-byte-stack-alignment-for-x86-32
 
 The stack is the most important structure in the context of binary
 exploitation but even the most simple programs can generate

@@ -179,34 +179,5 @@ Return Address.
 Obs.: My machine uses little-endian, that's why the address byte
 order is backwards. Yours is probably too (most are nowadays)
 
-Running any of the above commands will grant you a shell:
-
-```
-$
-```
-
-Success! We did it! However, we did it in a really agressive
-way. When you exit the shell look what happens:
-
-```
-$ exit
-Segmentation Fault
-```
-
-A Segmentation Fault! Depending on what the program you are exploiting
-does this could have some undesired consequences and also somebody could
-be monitoring the system for crashing programs! Either way, it is usually
-a good idea to make sure your program return the execution flow of the
-program to normal after redirecting it.
-
-So, diving deeper into what happen: Why did the `Segmentation Fault`
-happened?
-
-When we force the program to go to `impossible_shell`, we aren't using
-the proper `call` command. We are just telling the program
-"Hey! Go there!" without giving him information how to get back. When
-`impossible_shell` ends and uses `leave` and `ret`, two functions that
-get previously pushed values from the stack, the `Segmentation Fault`
-happens, because just by overwriting the Instruction Pointer we aren't
-pushing the proper values that `leave` and `ret` will fetch from the
-stack later.
+Running any of the above commands (with the proper addresses)
+should grant you a shell!

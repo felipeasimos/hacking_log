@@ -1,13 +1,8 @@
 # The Stack
 
 sources:
-https://stackoverflow.com/questions/19128291/stack-alignment-in-x64-assembly \
-https://stackoverflow.com/questions/5538079/why-alignment-is-16-bytes-on-64-bit-architecture \
-https://gcc.gnu.org/legacy-ml/gcc-help/2010-01/msg00113.html \
-https://stackoverflow.com/questions/4175281/what-does-it-mean-to-align-the-stack \
-https://forum.nasm.us/index.php?topic=1689.0 \
-https://stackoverflow.com/questions/612443/why-does-the-mac-abi-require-16-byte-stack-alignment-for-x86-32
-https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html
+https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html \
+https://en.wikipedia.org/wiki/X86_calling_conventions
 
 There are big differences for compiling a program for 32 bit and for 64
 bit. A change that usually get in the way of the usual buffer overflow
@@ -156,3 +151,25 @@ Parameter 1 |
 
 10. If parameters were pushed to the stack, the next instructions are `pop`
 commands that take them out.
+
+## Caviats
+
+* In 64 bits, the first 6 integers arguments are passed by the registers
+`rdi`, `rsi`, `rdx`(in windows only), `rcx`, `r9` and `r8`.
+
+* In 64 bits, the first 8 floating point arguments are passed by the
+registers `xmm0`, `xmm1`, `xmm2`, `xmm3`, `xmm4`, `xmm5`, `xmm6` and
+`xmm7` (`xmm` registers from 0 to 7).
+
+* Floating point return values are stored in `xmm` registers. In
+Linux, if these don't have enough space, the wider `ymm` and `zmm` are
+used instead (they both also go from 0 to 7).
+
+* Any additional arguments are pushed on the stack like in 32 bits.
+
+* Return values up to 64 bits in size are stored in the `rax` register
+
+* Return values up to 128 bits in size are store in `rax` and `rdx`
+
+* the wikipedia source has some procedures specific to Windows and
+Linux, like window's shadow space or linux's red-zone.

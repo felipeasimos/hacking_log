@@ -1,8 +1,9 @@
 # Registers
 
 sources:
-* http://www.eecg.toronto.edu/~amza/www.mindsec.com/files/x86regs.html
-* https://www.assemblylanguagetuts.com/x86-assembly-registers-explained/
+http://www.eecg.toronto.edu/~amza/www.mindsec.com/files/x86regs.html \
+https://www.assemblylanguagetuts.com/x86-assembly-registers-explained/ \
+https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html
 
 ## Layout and Syntax
 
@@ -108,10 +109,39 @@ Ex:
 
 ## Types
 
-### Data Registers
+### To Save or Not Save?
+
+Registers can be divided in two groups: *caller save* registers and
+*callee save* registers.
+
+#### Caller Save Registers
+
+Also called volatile registers. They are `rax`/`eax`, `rcx`/`ecx`,
+`rdx`/`edx`, `rdi`/`edi`(in linux), `rsi`/`esi`(in linux), `r8`,
+`r9`, `r10` and `r11`. They can be used freely inside a function,
+but are not guaranteed to keep the same value after a function
+calling (because other functions can also use them freely), so
+you must save them before calling a function to use the value
+later (by pushing their values to stack and popping it back after
+the `call`).
+
+#### Callee Save Registers
+
+Also called non-volatile registers. They are `rbx`/`ebx`,
+`rbp`/`ebp`, `rdi`/`edi`(in windows), `rsi`/`esi`(in windows),
+`rsp`/`esp`, `r12`, `r13`, `r14`, `r15`. Their original
+values must be saved before using them, and their original
+values must be restored before before the current function
+return.
+
+### Grouping by Purpose
+
+Another way to group registers, is by their purpose.
+
+#### Data Registers
 
 Holds data about for operations. They are also called general purpose
-registers:
+registers.
 
 64 bit |32 bit | 16 bit | 8+8 bit
 -------|-------|--------|--------
