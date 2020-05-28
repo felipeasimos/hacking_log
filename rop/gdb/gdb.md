@@ -76,6 +76,19 @@ command inside `gdb` and give the process PID as argument, or
 type `gdb <binary name>`, press TAB (this will autocomplete
 with the PID of a process running the binary) and then ENTER.
 
+To enable this feature you need to type:
+
+```
+sudo sysctl -w kernel.yama.ptrace=0
+```
+
+This will enable process attach themselves to others. You
+may want to disable this afterwards due to security concerns:
+
+```
+sudo sysctl -w kernel.yama.ptrace=1
+```
+
 ### `flavor`
 
 `gdb` can show assembly code using two syntaxes: intel and AT&T.

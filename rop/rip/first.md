@@ -463,7 +463,7 @@ in the environment we will exploit by attaching `gdb` to
 it.
 
 First, run `sudo sysctl -w kernel.yama.ptrace_scope=0`,
-this will allow us to attach `gdb` to already running
+this will allow us to attach `gdb` to an already running
 processes.
 
 If you run `./rip $( python3 exploit.py )` and don't
