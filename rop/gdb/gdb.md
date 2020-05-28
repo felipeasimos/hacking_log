@@ -21,6 +21,8 @@ provide a better debugging experience:
 
 * `flavor`
 
+* `attaching`
+
 You can change these settings everytie you enter `gdb` or write
 them to `~/.gdbinit`, where `gdb` always execute commands from
 when called.
@@ -63,6 +65,16 @@ Typing `unset env LINES` and `unsed env COLUMNS` will get rid
 of these variables. If your shell by default use these variables,
 don't worry! They will be there if set by your shell, but omitted
 if only `gdb` sets them!
+
+### `attaching`
+
+`gdb` can attach itself to already running processes. This is
+can help debug situations when your exploit only works in `gdb`
+even though the environment variables are the same and
+`disable-randomization` is off. You can either use the `attach`
+command inside `gdb` and give the process PID as argument, or
+type `gdb <binary name>`, press TAB (this will autocomplete
+with the PID of a process running the binary) and then ENTER.
 
 ### `flavor`
 

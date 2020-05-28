@@ -22,7 +22,7 @@ int main(){
 		passcheck=1;
 	}
 
-	//get r00t
+	//get shell
 	if( passcheck ){
 
 		system("/bin/sh");
