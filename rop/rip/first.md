@@ -1,9 +1,9 @@
 # Overwriting the RIP/EIP
 
 dependencies:
-	(Buffer Overflow)[../buffer_overflow/buffer_overflow.md]
-	(Layout)[../../elf/layout.md]
-	(Compilation)[../../elf/compilation.md]
+	[Buffer Overflow](../buffer_overflow/buffer_overflow.md) \
+	[Layout](../../elf/layout.md) \
+	[Compilation](../../elf/compilation.md)
 
 sources:
 https://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html \
