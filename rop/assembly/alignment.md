@@ -1,5 +1,8 @@
 # Alignment
 
+dependencies:
+	[Stack](stack.md)
+
 sources:
 https://www.youtube.com/watch?v=OKjOZBaKlOc \
 https://en.wikipedia.org/wiki/Data_structure_alignment \

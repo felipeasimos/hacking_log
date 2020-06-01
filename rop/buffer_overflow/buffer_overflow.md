@@ -1,5 +1,12 @@
 # Buffer Overflow
 
+dependecies:
+	[Stack](../assembly/stack.md) \
+	[Registers](../assembly/registers.md) \
+	[Basics](../assembly/basics.md) \
+	[Alignment](../assembly/alignment.md) \
+	[Endianness](../assembly/endianncess.md) \
+
 sources: https://sourceware.org/gdb/onlinedocs/gdb/Continuing-and-Stepping.html
 
 In programming, a buffer is just a space in memory meant to store some data.

@@ -1,5 +1,8 @@
 # The Stack
 
+dependencies:
+	[Registers](registers.md)
+
 sources:
 https://codearcana.com/posts/2013/05/21/a-brief-introduction-to-x86-calling-conventions.html \
 https://en.wikipedia.org/wiki/X86_calling_conventions
