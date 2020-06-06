@@ -20,6 +20,7 @@ originals inside them. There are also new registers, numbered from 8 to
 syntax for accessing their 32, 16 and 8 bit counterparts.
 
 ```
+MSB								LSB
  ________________________________________________________________
 |________________________________________________________________| 64 bit register
 				 ________________________________
