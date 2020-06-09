@@ -120,11 +120,23 @@ called. To disable ASLR:
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
 ```
 
+Or using the `Makefile`:
+
+```
+make disable_aslr
+```
+
 The ASLR is automatically restore on reboot, but you can also do it
 manually:
 
 ```
 echo 2 | sudo tee /proc/sys/kernel/randomize_va_space
+```
+
+Or with `make`:
+
+```
+make enable_aslr
 ```
 
 Or you can just use the `Makefile`'s  `first` rule with `make first`,
