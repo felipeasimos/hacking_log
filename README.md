@@ -1,33 +1,25 @@
 # Repository Structure
 ```
-file:///home/felipe/uff/inmetro/hacking\_log
 |-- README.md
+|-- binary_exploitation
+|   |-- assembly
+|   |   |-- alignment.md
+|   |   |-- basics.md
+|   |   |-- endianness.md
+|   |   |-- registers.md
+|   |   `-- stack.md
+|   |-- buffer_overflow
+|   |   |-- buffer_overflow.md
+|   |-- gdb
+|   |   `-- gdb.md
+|   `-- rop
+|       |-- first.md
+|       `-- second.md
 |-- elf
-|   |-- Makefile
 |   |-- compilation.md
 |   |-- layout.md
-|   |-- test.c
-|-- linux
-|   |-- permissions.md
-|   `-- processes.md
-`-- rop
-    |-- assembly
-    |   |-- Makefile
-    |   |-- alignment.md
-    |   |-- basics.md
-    |   |-- endianness.md
-    |   |-- registers.md
-    |   |-- simple.c
-    |   `-- stack.md
-    |-- buffer_overflow
-    |   |-- Makefile
-    |   |-- buffer_overflow.md
-    |   `-- first_buffer_overflow.c
-    |-- gdb
-    |   `-- gdb.md
-    `-- rip
-        |-- Makefile
-        |-- exploit.py
-        |-- first.md
-        `-- rip.c
+`-- linux
+    |-- permissions.md
+    `-- processes.md
+
 ```

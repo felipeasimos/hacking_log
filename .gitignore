@@ -1,8 +1,9 @@
 # ignore all executables in rop subfolder
-rop/*/*
-!rop/*/*.*
-!rop/*/Makefile
-!rop/*/
+binary_exploitation/*/*
+!binary_exploitation/*/*.*
+!binary_exploitation/*/*/*.*
+!binary_exploitation/*/*/*.*
+!binary_exploitation/*/*/Makefile
 
 # ignore all executables in elf subfolder
 elf/*
