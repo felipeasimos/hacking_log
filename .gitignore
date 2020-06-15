@@ -1,7 +1,8 @@
 # ignore all executables in elf subfolder
 elf/*
 !elf/Makefile
-!elf/*.*
+!elf/*.md
+!elf/*.c
 
 #ignore all executables in binary_exploitation folders
 binary_exploitation/*/*

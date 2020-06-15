@@ -9,17 +9,19 @@
 |   |   |-- registers.md
 |   |   `-- stack.md
 |   |-- buffer_overflow
-|   |   |-- buffer_overflow.md
+|   |   `-- buffer_overflow.md
 |   |-- gdb
 |   |   `-- gdb.md
 |   `-- rop
-|       |-- first.md
-|       `-- second.md
+|       |-- first
+|       |   `-- first.md
+|       `-- second
+|           `-- second.md
 |-- elf
+|   |-- Makefile
 |   |-- compilation.md
-|   |-- layout.md
+|   `-- layout.md
 `-- linux
     |-- permissions.md
     `-- processes.md
-
 ```
