@@ -241,7 +241,7 @@ be loaded in different Pages.
 
 Compilers guarantee that by making each Segment's virtual address a
 multiple of the system's page size (which can be seen in linux with the
-command `getconf PAGESIZE`).
+command `getconf PAGESIZE`) each Segment will be in a different page.
 
 This is why grouping Sections in Segments is efficient: We group the
 Sections by permissions at compile time and just load the Segments
@@ -249,7 +249,10 @@ to different pages when running the executable.
 
 If instead we had just the Sections we would have to do this grouping
 when launching the executable or load each Section to a different page
-to guarantee that the permissions would be respected.
+to guarantee that the permissions would be respected, since each
+page has its own permission settings (you can't make half the
+page have a permission configuration different of the other half
+for example).
 
 ## Sections and Section Headers
 

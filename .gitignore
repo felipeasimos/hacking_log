@@ -2,3 +2,11 @@
 elf/*
 !elf/Makefile
 !elf/*.*
+
+#ignore all executables in binary_exploitation folders
+binary_exploitation/*/*
+binary_exploitation/*/*/*
+!binary_exploitation/*/*.*
+!binary_exploitation/Makefile
+!binary_exploitation/*/*/*.*
+!binary_exploitation/*/*/Makefile
