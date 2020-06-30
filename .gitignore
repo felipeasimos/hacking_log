@@ -5,7 +5,6 @@ elf/*
 !elf/*.c
 
 #ignore all executables in binary_exploitation folders
-binary_exploitation/*/*
 binary_exploitation/*/*/*
 !binary_exploitation/*/*.*
 !binary_exploitation/Makefile
