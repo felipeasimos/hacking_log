@@ -12,6 +12,7 @@ https://stackoverflow.com/questions/4888067/how-to-get-linux-kernel-page-size-pr
 https://greek0.net/elf.html \
 http://www.skyfree.org/linux/references/ELF_Format.pdf \
 https://linuxhint.com/understanding_elf_file_format/
+https://blog.k3170makan.com/2018/09/introduction-to-elf-format-elf-header.html
 
 ## Basic Structure
 
