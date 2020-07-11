@@ -1,14 +1,20 @@
 # Nmap
 
+dependencies:
+[OSI Model](../osi/osi.md)
+
 sources:
 https://nmap.org/book/toc.html \
 https://www.youtube.com/watch?v=4t4kBkMsDbQ \
 https://academiaclavis.com.br/courses/exin-ethical-hacking-e-comptia-pentest-mais \
 https://www.geeksforgeeks.org/tcp-flags/ \
 https://geek-university.com/nmap/port-states/ \
-https://www.lifewire.com/internet-protocol-tutorial-subnets-818378
-https://nmap.org/book/host-discovery-specify-targets.html
-https://www.digitalocean.com/community/tutorials/understanding-ip-addresses-subnets-and-cidr-notation-for-networking
+https://www.lifewire.com/internet-protocol-tutorial-subnets-818378 \
+https://nmap.org/book/host-discovery-specify-targets.html \
+https://www.digitalocean.com/community/tutorials/understanding-ip-addresses-subnets-and-cidr-notation-for-networking \
+https://nmap.org/book/host-discovery-techniques.html \
+https://linuxhint.com/nping_nmap_arp_scan/ \
+https://www.lifewire.com/address-resolution-protocol-817941 \
 
 `nmap` stands for Network Mapper. As you can guess by the name, it is a
 really popular network reconnaissance tool that let us scan for specific
@@ -57,9 +63,16 @@ Option | Scan Type | Stealth   | Traffic
 This is useful since many hosts don't respond to the default ICMP
 echo requests:
 
-Option | Ping Type | Stealth | Traffic
--------|-----------|---------|--------
--PS<port list> | SYN | full-open | (syn) -> \| <- ((syn,ack) || (rst)) \| (rst)->
+Option | Ping Type | Stealth | Traffic | Caviats
+-------|-----------|---------|---------|
+-PS<port list> | SYN | full-open | (syn) -> \| <- ((syn,ack) || (rst)) \| (rst)-> | 
+-PA<port list> | ACK | no connection | (ack) -> \| <- (rst) |
+-PU<port list> | UDP | no TCP used | (UDP on top of ICMP) -> \| <- (ICMP if port is closed) | open ports don't respond
+-PE | ICMP echo request | standard `ping` | (echo request) -> \| <- (echo reply) | blocked by most firewalls
+-PP | ICMP timestamp query | ICMP request | (timestamp query) -> \| <- (query response) | useful when only some ICMP packets are blocked
+-PM | ICMP address mask query | ICMP request | (address mask query) -> \| <- (query response) | useful when only some ICMP packets are blocked
+-PO<protocol list> | IP Protocol | depend on the protocol | (protocol packet) -> \| <- (response) | flexible
+-PR | ARP | default ARP | normal ARP exchange | only difference from normal ARP is that `nmap` handles it to make the process faster for many hosts
 
 ## TCP
 
@@ -231,10 +244,15 @@ ICMP requests, even though it is stated in the RFC requirement.
 
 To combat this, `nmap` has some techniques that can be used in _Host Discovery_.
 
+Keep in mind that the we still use ICMP in all of these, the difference is what
+we add to the payload in the upper layer.
+
 #### TCP SYN Ping (-PS<port list>)
 
 This option sends an empty TCP packet with the SYN flag set. The default port it sends
 to is `80`. In linux, unprivileged users will just do a default `connect` system call instead.
+
+For more info check the [online `nmap` book](https://nmap.org/book/host-discovery-techniques.html)
 
 ##### Trafiic
 
@@ -242,12 +260,13 @@ to is `80`. In linux, unprivileged users will just do a default `connect` system
 
 2. Server -> (RST) if port is closed, (SYN, ACK) if it is open
 
-3. Client -> (RST)
+3. Client -> (RST) if Server sent (SYN,ACK)
 
 obs.: Mind that for unprivileged users, a normal handshake would happen
 
-`nmap` forcefully shutdowns the connection and doesn't care wheter the response was
-(RST) or (SYN,ACK), since at this stage it only cares if the host is up.
+`nmap` forcefully shutdowns the connection if an (SYN,ACK) was sent by the Server, and
+doesn't care wheter the port is opened or closed, since at this stage it
+only cares if the host is up.
 
 #### TCP ACK Ping (-PA<port list>)
 
@@ -259,11 +278,79 @@ normally.
 
 It can work on some firewalls rules that ignore SYN pings.
 
+For more info check the [online `nmap` book](https://nmap.org/book/host-discovery-techniques.html)
+
 ##### Traffic
 
 1. Client -> (ACK)
 
 2. Server -> (RST)
+
+#### UDP Ping (-PU<port list>)
+
+This scan sends an UDP packet to the given ports. For most ports, the UDP packet will be empty,
+except for common ports like 53 and 161, where `nmap` add protocol-specific payload so it is
+more likely to receive an response.
+
+If an open port is reached, most services will just ignore the empty packet and return no response.
+
+If the port is closed, the target host should send back an ICMP `port unreachable` packet.
+
+For more info check the [online `nmap` book](https://nmap.org/book/host-discovery-techniques.html)
+
+##### Traffic
+
+1. Client sends UDP packet
+
+2. If Server is alive and port is closed, it should send back an ICMP `port unreachable` packet.
+
+Keep in mind that if no response if given, you can't know if the host is down or the port is closed.
+
+#### ICMP Ping (-PE, -PP, -PM)
+
+In addition to previous _Host Discovery_ techniques using unusual TCP and UDP packets, `nmap` can send
+standard packets like the ones sent by the `ping` command or other ICMP-only packets.
+
+Each of the options do the following:
+
+* `-PE` - Echo request. Send echo request and expect echo reply. Exactly like `ping`.
+
+* `-PM` - Address mask query. Query for an address mask.
+
+* `-PP` - Timestamp query. Query for a timestamp. 
+
+`-PM` and `-PP` can be really useful when firewalls don't block all kinds of ICMP packets.
+
+#### IP Ping (-PO<protocol list>)
+
+The idea of this ping is to be flexible. The protocol list given as argument correspond to the
+protocol number in the IP header (default is 1, for ICMP).
+
+The packets are sent with the protocol header on top of it, with no additional data
+for the upper layers, except for ICMP, IGMP, TCP and UDP, where the packets are sent with
+the proper protocol headers.
+
+You can also use the `--data-lenght` option to add random data to the packet.
+
+Any response given back means that the host is alive.
+
+#### ARP Scan (-PR)
+
+A common use for `nmap` is to LAN networks. For most LANs, the majority of the IP addresses
+are not used at any given time. Because of this, when an IP is from a LAN (you can know this
+just by looking at the IP address), `nmap` by default performs the ARP Scan for _Host Discovery_.
+
+An ARP Scan is just the normal ARP protocol exchange to know to what MAC an private IP address
+belongs. Inside a LAN you need to know the MAC of a host to send something to it.
+
+As a consequence, our computer end up sending ARP requests before the `nmap` scan. However, this
+can be bad new when scanning many different hosts inside LAN, that's where we use `nmap`'s ARP scan:
+it basically gives `nmap` the control over these ARP requests so it can optimize the process for its
+purposes.
+
+In summary, ARP Scans are not stealthy at all (`nmap` is just performing normal ARP requests), however
+they are the fastest scan in LAN (since `nmap` has to send ARP requests to know the hosts MAC anyway)
+and thus this is the default scan for LAN networks.
 
 ## Scan Types
 
