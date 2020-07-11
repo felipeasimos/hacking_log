@@ -63,16 +63,16 @@ Option | Scan Type | Stealth   | Traffic
 This is useful since many hosts don't respond to the default ICMP
 echo requests:
 
-Option | Ping Type | Stealth | Traffic | Caviats
--------|-----------|---------|---------|
--PS<port list> | SYN | full-open | (syn) -> \| <- ((syn,ack) || (rst)) \| (rst)-> | 
--PA<port list> | ACK | no connection | (ack) -> \| <- (rst) |
+Option | Ping Type | Stealth | Traffic | Caviats |
+-------|-----------|---------|---------|---------|
+-PS<port list> | SYN | full-open | (syn) -> \| <- ((syn,ack) || (rst)) \| (rst)-> | unprivileged users just `connect` (send ACK back)
+-PA<port list> | ACK | no connection | (ack) -> \| <- (rst) | unprivileged users just `connect`
 -PU<port list> | UDP | no TCP used | (UDP on top of ICMP) -> \| <- (ICMP if port is closed) | open ports don't respond
--PE | ICMP echo request | standard `ping` | (echo request) -> \| <- (echo reply) | blocked by most firewalls
+-PE | ICMP echo request | standard `ping` | (echo request) -> \| <- (echo reply) | ignored by most hosts
 -PP | ICMP timestamp query | ICMP request | (timestamp query) -> \| <- (query response) | useful when only some ICMP packets are blocked
 -PM | ICMP address mask query | ICMP request | (address mask query) -> \| <- (query response) | useful when only some ICMP packets are blocked
 -PO<protocol list> | IP Protocol | depend on the protocol | (protocol packet) -> \| <- (response) | flexible
--PR | ARP | default ARP | normal ARP exchange | only difference from normal ARP is that `nmap` handles it to make the process faster for many hosts
+-PR | ARP | default ARP | normal ARP exchange | only difference from normal ARP is that `nmap` handles it to make the process faster for many hosts. Default scan for LAN
 
 ## TCP
 
