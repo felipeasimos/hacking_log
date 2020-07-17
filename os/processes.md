@@ -1,5 +1,9 @@
 # Processes
 
+sources:
+https://gabrieletolomei.files.wordpress.com
+http://wiki.inf.ufpr.br/maziero/lib/exe/fetch.php?media=socm:socm-livro.pdf
+
 Every program in linux run inside a process. And since everything in linux
 is a file, the processes are too!
 
@@ -92,3 +96,59 @@ which the dead child status and remove child from memory when completed.
 If the Parent don't call `wait`, the dead child is kept in memory! In this
 case when the parent process exits, the `init` process will adopt the
 child. `init` periodically reaps (clear memory) its zombie children.
+
+## Memory
+
+When we execute a program, we are creating another process, which loads
+the process image from the executable to a memory space given by the OS.
+
+### Sections
+
+The stuff loaded from the excutable to memory is divided in sections (we
+can see this in more detail in the [elf](../elf/layout.md) section)
+which is then divided in sections:
+
+* __TEXT__ - has the code to be executed by the process, generated during
+compilation and linking to libraries. This area has fixed size, calculated
+during compilation and normally can only be accessed for reading and
+executing.
+
+* __DATA__ - contain the initialized static variables, which the value is
+given at the source code of the program. These values are kept in the
+executable file and loaded to this section when the process starts. global
+and local static variables are kept here.
+
+* __BSS__ - historically called _Block Started by Symbol_, this section
+stores the non-initialized static variables. This section is separated from
+__DATA__ because the initialized static variables need to have their value
+stored in the executable file, and the separation allow the execution file
+to be smaller.
+
+* __HEAP__ - area used to store dynamic data, using operators like
+`malloc` and `free`. This area has variable size, since it can
+grow/shrink due to allocations/deallocations. The end of this section is 
+defined by a pointer called _Program Break_, or simply _break_, that
+can be tuned through system calls to grow/shrink the heap size.
+
+* __STACK__ - area where the execution stack of the process is. In
+multithreaded programs, this area only contain the stack of the main
+thread. Since threads can be created and destroyed dynamically,
+each thread store its execution stack in the heap or in another
+memory region dedicated to this. The execution stack grows downwards,
+we can see this in more deatil in the [assembly](../binary_exploitation/assembly/stack.md)
+section.
+
+You may noticed that only __TEXT__ has read and execute permission, while
+the other sections usually have only read and write permissions (sometimes
+we need to executed code from heap or make some section read only for more
+security).
+
+### Memory Layout
+
+These sections are layed out in memory like so:
+
+![Process Layout in Memory](https://gabrieletolomei.files.wordpress.com/2013/10/program_in_memory2.png?)
+
+The addresses where the sections are usually randomized, just like the
+space between them, due to ASLR (which we cover in the
+[rop](../binary_exploitation/rop/third/third.md) section).
