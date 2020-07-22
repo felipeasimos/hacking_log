@@ -7,6 +7,12 @@ https://www.blackhat.com/presentations/bh-usa-07/Ferguson/Whitepaper/bh-usa-07-f
 https://heap-exploitation.dhavalkapil.com/ \
 https://stackoverflow.com/questions/12825148/what-is-the-meaning-of-the-term-arena-in-relation-to-memory \
 https://www.youtube.com/watch?v=HWhzH--89UQ
+https://www.youtube.com/watch?v=kVxmvaSliu8
+https://www.youtube.com/watch?v=VLnhV1T5Ng4
+https://www.youtube.com/watch?v=z33CYcMf2ug&t=68s
+https://sourceware.org/glibc/wiki/MallocInternals%C2%A0
+https://dangokyo.me/2017/12/05/introduction-on-ptmalloc-part1/
+https://www.blackhat.com/presentations/bh-usa-07/Ferguson/Presentation/bh-usa-07-ferguson.pdf
 
 dependencies:
 [Processes](processes.md)
@@ -15,14 +21,20 @@ As we saw before, the heap is just a part of the
 memory given to a process in which we can dynamically allocate
 and deallocate parts of it. 
 
-In some places you may also see the term __arena__ used to refer to it, which means:
+In some places you may also see the term __arena__ used with it, which means:
 
 ```
-"large, contiguous piece of memory that you allocate once and
-then use to manage memory manually by handing out parts of that memory"
+A structure that is shared among one or more threads which contains
+references to one or more heaps, as well as linked lists of chunks within those heaps which are "free".
+Threads assigned to each arena will allocate memory from that arena's free lists. 
 ```
 
 The way the heap works is determined by system libraries, like `glibc`.
+
+We often say _the_ heap, as if is only possible to be one by process,
+when in fact you can actually have more than one. For simplicity
+and learning purposes, we can think of it being only one heap
+without much problem though.
 
 The management of the heap in GNU/Linux is done by the _ptmalloc2_
 allocator, and it is the one where are going to focus in this section,
@@ -53,10 +65,13 @@ that is not an alocated chunk).
 Also, keep in mind that there are many different __bins__ of
 different types.
 
-There is also metadata in the heap for each chunk, so we can
-traverse through the all the chunks in memory (without a pointer,
+There is also metadata for each chunk, so we can traverse
+through the all the chunks in memory (without a pointer,
 only knowing their sizes). This metadata end up working like a
 doubly linked list.
+
+Also, be aware that adjacent chunks don't necessarily belong to
+the same __bin__ (usually they don't actually).
 
 ## Fragmentation
 
@@ -183,7 +198,7 @@ just before the returned address:
 chunk -> .--------------------------------------------------.
 	 | size of previous chunk, if allocated             |
 	 |--------------------------------------------------|
-	 | size of chunk, in bytes          | A | M (0) | P |
+	 | size of chunk, in bytes          	| A | M | P |
 mem ---> |--------------------------------------------------|
 	 |      User data start here ...                    |
 	 `--------------------------------------------------´
@@ -196,16 +211,15 @@ allow to find the allocated chunks.
 The size of the previous chunk, and the size of the current chunk
 are both `size_t`, which is usually 4 bytes for each.
 
-As you can see, the three least significant bits in the size
-fields have special meaning:
+Since all chunks are multiple of 8 bytes, the last three bits of
+the size field can be reserved, and carry special meaning:
 
 * __A (NON_MAIN_AREA)__ - 0 for chunks in the main area. Each thread
 spawned receives its own arena, and for those chunks this bit is set.
 
 * __M (IS_MMAPED)__ - the chunk was obtained through `mmap`. If set,
 the other two bits are ignored, since mmaped chunks are neither in
-the arena, not adjacent to a free chunk. This bit will always be
-zero for the current chunk since it is clearly in the heap.
+the arena, not adjacent to a free chunk.
 
 * __P (PREV_INUSE)__ - 0 when previous chunk (not the previous one
 in the linked list, but the one directly before it in memory) is
@@ -237,9 +251,14 @@ in the __bin__ that this free chunk belongs to. Mind that
 when we free a chunk, it is coalesced with any free chunks it
 has borders with.
 
+If the chunk is a large chunk and it is free, we also have
+two pointers, for the next and previous large chunks.
+
 ## Data Structures
 
-`glibc` has some structs used in the heap management:
+`glibc` has some structs used in the heap management. They are saved in the heap itself
+(like the metadata we saw before!) and appear in it in the same order as they are
+presented here:
 
 ### `_heap_info`
 
@@ -333,12 +352,10 @@ types of __bins__:
 
 Name | Linking | Management | Order | Chunk Sizes (not including metadata) | Number of Bins | Speed | Caviats |
 -----|---------|------------|-------|--------------------------------------|------------------|-------|---------|
-Fast bins | single | LIFO | Each bin has chunks of same size | 0, 12, 20, ... 80 | 10 | Fastest | No two contiguous free chunks here coalesce together (trading speed for fragmentation).  |
-Unsorted bin | double | FIFO | No order | any | 1 | | kind like a "cache" bin. Freed chunks are sent here to then be send to the right bin | 
+Fast bins | single | LIFO | Each bin has chunks of same size | 0, 12, 20, ... 80 (or 60) | 10 | Fastest | No two contiguous free chunks here coalesce together, because they do not hold size of previous chunk (trading speed for fragmentation, fastbin is the only one that does this). Next chunk's `P` is on (always considered in use).|
+Unsorted bin | double | FIFO | No order | any | 1 | | kind like a "cache" bin. Freed chunks are sent here to then be send to large or small bin | 
 Small bins | double | FIFO | Each bin has chunks of same size | lower than 500 bytes | 62 | Faster than Large bins, slower than Fast bins | |
-Large bins | double | FIFO | Decreasing | between 500 bytes and 128Kb | 63 | Slowest | Chunks bigger than 128Kb are served by mmap | 
-
-obs.: Small and Large bins are the ones that may be coalesced together when freed.
+Large bins | double | FIFO | Decreasing | lower than 128Kb | 63 | Slowest | Chunks bigger than 128Kb are served by mmap | 
 
 ### Special Bins
 
@@ -362,3 +379,364 @@ Heap initialization occurs the first time an allocation is requested. This
 is when the heap is created, almost always prior to any call to `malloc`
 from the developer, due to process/application initialization step, where
 `libc` is called some times to allocate memory.
+
+During initialization, small and large bins are empty.
+
+### Creation
+
+The heap creation is implicitly triggered when calling an allocation
+function under certain conditions:
+
+1. No heap exists
+
+2. Called immediatly followed by subsystem initialization
+
+### Allocation
+
+When calling `malloc`, this is the path we take:
+
+```
+malloc(size_t bytes) -> __libc_malloc(size_t bytes)
+			|           |        
+			|           |        
+			v           v        
+	   arena_get(ar_ptr, size)  _int_malloc(mstate av, size_t bytes)
+	                            |                     |
+				    |                     |
+				    v                     v
+			alloc_perturb(char* p, size_t n)  malloc_consolidate(mstate av)--.
+							  |                              |
+							  |                              |
+							  v                              v
+							  malloc_init_state(mstate av)   unlink(AV, P, BK, FD)
+```
+
+#### `__libc_malloc(size_t bytes)`
+
+1. Calls `arena_get` to get `mstate` pointer.
+
+2. Calls `_int_malloc` with the pointer and the size.
+
+3. Unlocks the arena.
+
+4. Before returning pointer to chunk, one of these must be true:
+
+	* Returned pointer is NULL.
+
+	* Chunk is MMAPPED.
+
+	* Arena for chunk is the same for the one found at step 1.
+
+#### `arena_get(ar_ptr, size)`
+
+1. Acquires an arena and locks the corresponding mutex.
+
+2. `ar_ptr` is set to the corresponding arena.
+
+3. `size` is just a hint as to how much memory will be required
+immediately.
+
+#### `_int_malloc(mstate av, size_t bytes)`
+
+1. Update `bytes` to handle alignments.
+
+2. Checks if `av` is NULL of not.
+
+3. If `av` is NULL (absance of usable arena), calls `sysmalloc`
+to obtain chunk using mmap. If sucessful, calls `alloc_perturb`.
+Returns the pointer.
+
+4. Otherwise:
+
+* If size falls in fastbin range:
+
+	1. Get index into the fastbin array to access an
+	appropriate bin according to request size.
+
+	2. Removes first chunk from that list (LIFO) and
+	assign `victim` pointer to it.
+
+	3. If `victim` is NULL, move on to next case (smallbin)
+
+	4. If `victim` is not NULL, do a security check to ensure
+	the size belongs to this bin ("malloc(): memory corruption (fast)").
+
+	5. Calls `alloc_perturb`.
+
+	6. Return `victim`.
+
+* If size falls in the smallbin range:
+
+	1. Get index into the samllbin array to access an
+	appropriate bin according to the requested size.
+
+	2. If there are no chunks in this bin (check `bin` and `bin->bk`),
+	move on to the next case (largebin).
+
+	3. `victim = bin->bk` (last chunk in the bin).
+
+	4. If `victim` is NULL (happens during initialization), call
+	`malloc_consolidate` and skip this complete step of checking
+	into different bins.
+
+	5. If `victim` is not NULL, check `victim->bk->fd == victim`
+	("malloc(): smallbin double linked list corrupted").
+
+	6. Sets the `P` bit (PREV\_INUSE) bit for the next chunk (in
+	memory, not list).
+
+	7. Remove `victim` from list.
+
+	8. Set appropriate arena bit for this chunk depending on `av`.
+
+	9. Calls `alloc_perturb` and then return the pointer.
+
+* If size falls in the largebin range:
+
+	1. Get index into the largebin array to access an appropriate
+	bin according to the requested size.
+
+	2. If `av` has fastchunks (check FASTCHUNKS\_BIT in `av->flags`)
+	call `malloc_consolidate` on `av`.
+
+5. If no pointer has yet been returned, this mean one or more of these
+statements is true:
+
+	* Size falls into fastbin range but no fastchunk is available
+
+	* Size falls into smallbin range but no smallchunk is available
+	(calls `malloc_consolidate` during initialization)
+
+	* Size falls into largebin range
+
+6. Unsorted chunks are checked and traversed chunks are place into
+bins (only step where chunks are placed into bins). Traversal happens
+from the tail, until end of unsorted bin is reached or we went
+through MAX\_ITERS chunks (10000). Each iteration looks like so:
+
+	1. `victim` points to the current chunk being considered (tail)
+
+	2. Check if `victim`'s chunk size is within minimum (2\*SIZE\_SZ) and
+	maximum (`av->system_mem`) range ("malloc(): memory corruption").
+
+	3. If requested size belongs to smallbin, `victim` is the
+	`last_remainder`, `victim` is the only chunk in unsorted bin and
+	`victim` size is equal or greater to the one requested, break
+	the chunk into 2:
+
+		* The first chunk matches the requested size and is returned
+		(using `alloc_perturb`).
+
+		* Left over chunk becomes the new `last_remainder` and is
+		inserted back into unsorted bin.
+
+	4. Else, remove `victim` from unsorted bin.
+	
+	5. If the size of `victim` match the one requested exactly,
+	returns chunk after calling `alloc_perturb`.
+
+	6. If `victim` size belongs to smallbin, add chunk to
+	appropriate smallbin at the head.
+
+	7. Else insert into appropriate largebin while maintaing
+	sorted order.
+
+7. Check if requested size does not fall in the smallbin range,
+if so then check largebins.
+
+	1. Get index into largebin array to access an appropriate
+	bin according to the requested size.
+
+	2. Point `victim` to the smallest chunk with enough size
+	for the request.
+
+	3. Remove `victim` from the bin (`unlink`).
+
+	4. Split `victim` (to have a chunk that matches request)
+	and put left over chunk in the unsorted bin.
+
+	5. Call `alloc_perturb` and return `victim`.
+
+8. Until now, everytime we check in the fastbins and smallbins we
+do so by going directly to the bin with the __exact__ chunk size
+as the one requested. Let's try finding chunks bigger than the
+one requested! Repeat these steps until all bins are exhausted:
+
+	1. The index is incremented to check the next bin.
+
+	2. Use `av->binmap` to skip over empty bins.
+
+	3. Point `victim` to tail of current bin.
+
+	4. `av->binmap` ensure that __definitely empty__ bins
+	are skipped, but does ensure that __all empty__ bins
+	are skipped. Because of that, we need to check if
+	`victim` is empty (skip to next iteration if it is).
+
+	5. When at a non-empty bin where the chunk size is
+	greater than the one requested (continue to next
+	iteration if it isn't):
+
+		* Split the chunk into 2: request size chunk
+		and left over.
+
+		* Send left over to unsorted bin (to its tail,
+		to ensure we pass the check
+		`unsorted_chunks(av)->fd->bk == unsorted_chunks(av)`,
+		which gives us "malloc(): corrupted unsorted chunks 2")
+
+		* Call `alloc_perturb` and return `victim`.
+
+9. If still no chunk is found, 'top' chunk will be used to service the
+request:
+
+	1. `victim` points to `av->top`
+
+	2. If top chunk is greater than the requested size + MINSIZE,
+	split it into two chunks: remainder will be the new top
+	chunk and the other is returned after calling `alloc_perturb`.
+
+	3. See if `av` has fastchunks or not (check FASTBINS\_BIT in
+	`av->flags`), if so, call `malloc_consolidate` on `av` and 
+	return to step 6.
+
+	4. If `av` doesn't have fastchunks, call `sysmalloc` (get mmap
+	to give us a chunk) and return obtained pointer after calling
+	`alloc_perturb`.
+
+#### `alloc_perturb(char* p, size_t n)`
+
+If `perturb_byte` (tunable parameter for `malloc` using M\_PERTURB)
+is non-zero (by default it is 0), sets the `n` bytes pointed to by
+`p` to be equal to `perturb_byte` ^ 0xff.
+
+#### `malloc_consolidate(mstate av)`
+
+It is like an specialized free.
+
+1. Check if `global_max_fast` is 0 (`av` not initialized) or not.
+
+2. If it is 0, call `malloc_init_state` with `av` as parameter and return
+
+3. If it is not 0, clear FASTCHUNKS\_BIT for `av`
+
+4. Iterate through fastbin array from first to last indices:
+
+	1. Get lock on the current fastbin chunk and 
+	stop if it is NULL.
+
+	2. If previous chunk (by memory) is not in use, call
+	`unlink` on the previous chunk.
+
+	3. If next chunk (by memory) is not top chunk:
+
+		* If next chunk is not in use, call `unlink`
+		on it.
+
+		* Merge the chunk with the previous if free and next
+		if free (by memory). Add consolidated chunk to the
+		head of unsorted bin.
+
+	4. If next chunk (by memory) was top chunk, merge the chunks
+	appropriatly into a single top chunk.
+
+Obs.: The `P` bit (PREV\_IN\_USE) is used to check. Hence, fastbin chunks
+won't identify their previous chunk as free if it is a fastbin chunk (but
+they will at some point be identified since we are going through all fastbins).
+
+#### `malloc_init_state(mstate av)`
+
+Only called from `malloc_consolidate`.
+
+1. For non fast bins, create empty circular linked lists for each bin
+
+2. Set FASTCHUNKS_BIT flag for `av`.
+
+3. Initialize `av->top` to the first unsorted chunk.
+
+### Deallocation (Free)
+
+When calling `free` this is the path we take:
+
+```
+free -> __libc_free(void* mem)
+	   |                |
+	   |                |
+	   v                v
+	munmap_chunk     _int_free(mstate av, mchunkptr p, int have_lock)
+			   |
+		           |
+			   v
+			free_perturb(char* p, size_t n)
+```
+
+#### `__libc_free(void* mem)`
+
+1. Return if `mem` is NULL
+
+2. If chunk is mmapped and the dynamic brk/mmap threshold needs adjusting,
+call `munmap_chunk`.
+
+3. Get arena pointer for the chunk.
+
+4. Call `_int_free`
+
+#### `_int_free(mstate av, mchunkptr p, int have_lock)`
+
+1. Check wheter `p` is before `p + chunksize(p)` in the memory
+(to avoid wrapping) ("free(): invalid pointer").
+
+2. Check wheter the chunk is at least of size MINSIZE or a multiple of
+MALLOC\_ALIGNMENT ("free(): invalid pointer").
+
+3. If the chunk size falls in fastbin list:
+
+	1. Check if next chunk size is between minimum and
+	maximum size (`av->system_mem`) ("free(): invalid next size (fast)")
+
+	2. Calls `free_perturb` on the chunk.
+
+	3. set FASTCHUNKS\_BIT for `av`.
+
+	4. Get index into fastbin array according to chunk size.
+
+	5. Check if the top of the bin is not the chunk we are going to add ("double free or corruption (fasttop)")
+
+	6. Check if the size of the fastbin chunk at the top is the same as the chunk we are adding ("invalid fastbin entry (free)").
+
+	7. Insert the chunk at the top of the fastbin list and return.
+
+4. If the chunk is not mmapped:
+
+	1. Check if the chunk is the to chunk ("double free or corruption (top)").
+
+	2. Check wheter next chunk (by memory) is within the arena boundaries ("double free or corruption (out)").
+
+	3. Check wheter next chunk's (by memory) `P` bit is marked or not. ("double free or corruption (!prev)).
+
+	4. Check wheter the size of the next chunk is between the minimun and the maximum size (`av->system_mem`)
+	("free(): invalid next size (normal)").
+
+	5. Call `free_perturb` on the chunk.
+
+	6. If previous chunk (by memory) is not in use, call unlink on the previous chunk.
+
+	7. If next chunk (by memory) is not top chunk:
+
+		* If next chunk is not in use, call unlink on next chunk
+
+		* Merge the chunk with the previous if free and next
+		if free (by memory). Add consolidated chunk to the
+		head of unsorted bin. Before insertion check
+		`unsorted_chunks(av)->fd->bk == unsorted_chunks(av)`
+		("free(): corrupted unsorted chunks")
+
+		* If next chunk (by memory) was a top chunk, merge the chunks
+		appropriately into a single top chunk.
+
+5. If the chunk was mmapped, call `munmap_chunk`.
+
+#### `free_perturb(char* p, size_t n)`
+
+If `perturb_byte` (tunable parameter for malloc using M\_PERTURB) is non-zero (by default is 0), sets
+the `n` bytes pointed to by `p` to be equal to `perturb_byte`.
