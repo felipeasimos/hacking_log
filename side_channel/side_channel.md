@@ -13,7 +13,8 @@ https://www.felixcloutier.com/x86/clflush \
 https://eprint.iacr.org/2013/448.pdf \
 https://www.felixcloutier.com/x86/lfence \
 https://github.com/IAIK/flush_flush \
-https://github.com/nepoche/Flush-Reload
+https://github.com/nepoche/Flush-Reload \
+https://eprint.iacr.org/2020/907.pdf
 
 A side channel attack is any attack that is based on information
 gained from the implementation of a computer system, rather than
@@ -177,7 +178,7 @@ address space (by opening the file and using the file descriptor as an argument 
 `mmap`).
 
 Since the LLC is physically tagged, entries in the cache depend on the physical address
-of the shared page with no dependency on the virtual addresses the page is mapped to.
+of the shared page without relying on the virtual addresses the page is mapped to.
 Consequently, our virtual addresses will affect the victim without the need to worry
 about diversification techniques like ASLR.
 

@@ -183,8 +183,9 @@ Modern processors may also have:
 	for it.
 
 * __Memory Management Unit (MMU)__ - can be built-in inside
-the processor chip. Every processor has it. It is responsible
-for:
+the processor chip. Every processor has it. It intercepts the
+the access of the processor to the address and control buses.
+It is responsible for:
 
 	* analysing addresses accessed by the processor
 
@@ -196,6 +197,8 @@ for:
 	by the processor)
 
 	* It may also have a _cache_ for optimizing performance
+
+![MMU Scheme](https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.e-f2hw7oMhl1ObZPpmRZoAHaEK%26pid%3DApi&f=1)
 
 * __Primary Memory__ - Stores data and programs. This memory is
 typically volatile. Usually there are more than one, and they
@@ -217,6 +220,8 @@ main memory and I/O Modules. There are three parts to it:
 
 	* __Data Bus__ - transport the data to be sent between
 	the processor and the memory or I/O module.
+
+![System Bus Scheme](https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Computer_system_bus.svg/1200px-Computer_system_bus.svg.png)
 
 ## Interruptions and Exceptions
 
@@ -242,6 +247,9 @@ current execution and go to a predefined address, where an
 __interruption handler__ code is. After its execution the
 process return to the previous execution.
 
+Each _IRQ_ comes with a value, so it is possible to know
+why it has been send.
+
 Interruptions are actually really common
 (thousands of interruptions per second). They are used for
 telling the processor when an event happens, for example,
@@ -261,9 +269,6 @@ the execution flow using the same mechanism as the interruptions.
 We are talking about __exceptions__. Actions like illegal instructions,
 divisions by zero and other software errors launch exceptions in the
 in the processor, activating a routine responsible for handling exceptions.
-
-IRQ for exceptions comes with a value to indicate why the exception is
-happening.
 
 ## Protection
 
