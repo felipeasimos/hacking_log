@@ -1,7 +1,11 @@
 # Paging
 
+dependencies:
+	[Memory](memory.md)
+
 sources:
-https://eprint.iacr.org/2013/448.pdf
+https://eprint.iacr.org/2013/448.pdf \
+http://wiki.inf.ufpr.br/maziero/lib/exe/fetch.php?media=socm:socm-livro.pdf \
 
 ## Page Sharing
 
