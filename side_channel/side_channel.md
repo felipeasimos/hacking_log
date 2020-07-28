@@ -14,7 +14,14 @@ https://eprint.iacr.org/2013/448.pdf \
 https://www.felixcloutier.com/x86/lfence \
 https://github.com/IAIK/flush_flush \
 https://github.com/nepoche/Flush-Reload \
-https://eprint.iacr.org/2020/907.pdf
+https://eprint.iacr.org/2020/907.pdf \
+https://people.eecs.berkeley.edu/~kubitron/courses/cs252-S11/lectures/lec09-prediction2.pdf \
+https://en.wikipedia.org/wiki/Branch_target_predictor \
+http://cseweb.ucsd.edu/~j2lau/cs141/week8.html \
+http://euler.mat.uson.mx/~havillam/ca/CS323/0708.cs-323007.html \
+https://digitalassets.lib.berkeley.edu/techreports/ucb/text/CSD-89-553.pdf \
+https://www.youtube.com/watch?v=T8_Jvt2T6d0&list=PL1C2GgOjAF-IWC1AEXqWKFmAgZdQRJfZ6 \
+https://en.wikipedia.org/wiki/Branch_(computer_science) \
 
 A side channel attack is any attack that is based on information
 gained from the implementation of a computer system, rather than
@@ -60,7 +67,7 @@ Name | Observes | Footprint | Speed | Deduce |
 -----|----------|-----------|-------|------|
 [Flush+Reload](#flushreload) | Times it takes to access memory | Cache hits/misses rate, memory access | (Much slower than Flush+Flush) | If victim accessed memory
 [Flush+Flush](#flushflush) | Execution time of `flush` instruction | Minimal number of cache hits | 496 KB/s | If victim accessed memory
-Jump Over ASLR | 
+[Jump Over ASLR](#jump-over-aslr) | Times it takes to execute system call/code from another process | Depend on choosen targets | Depend on choosen targets | Address of a specific instruction from kernel or a running process
 AnC | 
 Keyboard Acoustic Emanations | Sound from key presses | None, if using same device as victim's, else it depends on a physical device nearby | Hardware dependent | What key where pressed
 
@@ -317,3 +324,251 @@ file to perform the attack (completely ignoring ASLR).
 Similar to the [Flush+Reload](#flushreload) setup. Just time how
 long misses and hit take (by forcing them to happen with `clflush`)
 to find the optimal threshold.
+
+### Jump Over ASLR
+
+Uses the BTB (Branch Target Buffer) to recover all
+random bits of a kernel address and reduce entropy
+of user-level randomization.
+
+#### Key Concepts
+
+* Usually, when we have a branch instructions (that
+makes us execute a different sequence of
+instructions) in our code, we do speculative execution,
+because in these cases we are able to run instructions
+before knowing which one we should.
+
+* We say a branch is _taken_ when we jump to another
+sequence of instructions, and _not taken_ if we just
+keep executing the same sequence.
+
+* That means we start executing instructions that are not
+guaranteed to be the ones we actually need (in which case
+we undo this execution). 
+
+* As you can imagine, executing the wrong instructions has
+a performance penalty, so there are mechanisms for better
+predicting the right instructions to run.
+
+* __Branch target buffer (BTB)__ is a hashtable, indexed by
+the current program counter, which contain branch target
+addresses, and maybe also the target instruction.
+
+* __BTBs__ are useful because with them we can know the
+possible next instructions addresses at the first stage
+of our pipeline.
+
+* Remember, the pipeline stages are, in order:
+
+Abbreviation | Name |
+-------------|------|
+IF | Instruction fetch |
+ID | Instruction decode |
+EX | Execute |
+MEM | Memory access |
+WB | Register write back |
+
+* With __BTBs__ the processing sequence is like so:
+
+```
+		IF (Query BTB)
+		       |
+	Was there an entry for current Program Counter (PC)?
+	   /                                               \
+	 YES                                               NO
+	  |                                                 |
+    ID (Use predicted PC from BTB, process the branch)   ID (Fetch and process next instruction normally)
+    	    |                                                                     |
+      Was the branch taken?                                              Was the branch taken?
+      /                   \                                    		 /                   \
+     YES                  NO                                            YES                  NO
+      |                    |                                             |                     \
+EX (Continue as normal)   EX (Flush mispredicted             EX (add instruction and            EX (Continue as normal)
+			  instructions, delete entry         target address to BTB.
+			  from BTB and restart at correct    Flush mispredicted instructions.
+			  instruction)                       Restart at the correct instruction)
+ 
+```
+
+* __Cross Domain Collisions (CDC)__ - Are collisions in the BTB between user-level
+and kernel-level branches. It occurs when the two branches, located at distinct
+virtual addresses, map to the same entry in BTB with the same target addresses. This
+can happen since BTB in recent processors ignore upper-order bits of the addresses.
+
+* __Same Domain Collisions (SDC)__ - Are BTB Collisions, just like __CDC__, the difference
+being that it happens between two user-level branches from two different processes.
+
+* __Kernel ASLR (KASLR)__ - is the ASLR procedure for
+kernel modules. Kernel virtual addresses can easily
+be translated to physical by subtrating a predefined
+`PAGE_OFFSET` (0xffffffff80000000 in 64 bit) from it.
+
+	* Without it, the kernel image is always placed in
+	the same physical address.
+
+	* With it, a sequence of random bits is generated during
+	boot. They are used to calculate the randomized offset
+	at which the kernel is placed in physical memory.
+
+* This is the layout of a kernel address in 64 bits:
+
+```
+47                 30 29          21 20                 0
+.--------------------.--------------.-------------------.
+|    Always Fixed    |  Randomized  | Determined during |
+| 111111111111111110 | during  load |    Compilation    |
+`--------------------'--------------'-------------------´
+```
+
+#### Vulnerability
+
+The vulnerability is something inherit in hastables: collisions. If two processes
+end up using the same entry in the BTB, we can detect when a branching instruction
+happened in another application, and in which address, by doing time measurements.
+
+#### Attack
+
+We need to first get a sample of the victim code. Let's say we found the following:
+
+```
+3000 <victim_func>:
+3000 push %rbp
+3001 mov %rsp,%rbp
+3004 nop
+3005 nop
+.  .  .
+3021 jmp <T2>
+3023 nop
+.  .  .
+302d <T1>
+302d nop
+.  .  .
+3037 <T2>
+3037 nop
+.  .  .
+3041 pop %rbp
+3042 retq
+```
+
+So we would code a `spy_func` accordingly:
+
+```
+3000 <spy_func>:
+3000 push %rbp
+3001 mov %rsp,%rbp
+3004 rdtscp
+3005 nop
+.  .  .
+3021 jmp <T2>
+3023 nop
+.  .  .
+302d <T1>
+302d nop
+.  .  .
+3037 <T2>
+3037 nop
+.  .  .
+3041 rdtscp
+.  .  .
+306c pop %rbp
+306d retq
+```
+
+The goal is to record the execution time of the
+spy process when the measured `jmp` instruction
+aligns with a similar instruction in the victim
+process.
+
+##### Recovering KASLR Addresses Bits
+
+Due to the way translation of virtual to physical
+kernel addresses happen, we can easily derandomize
+the static kernel image once we discover one specific
+address.
+
+To perform the attack we:
+
+1. Find system call that has a branch instruction and
+a small number of overall instructions (to minimize noise).
+
+2. Create list of all possible addresses for the branch
+instruction, taking into account the randomization scheme
+and offset of that instruction in kernel code.
+
+3. For each address **A** in the list, perform these
+steps:
+
+	1. Allocate buffer at required address in spy process
+
+	2. Load buffer with a block of code containing a single
+	jump instruction. The loading is done in a way that creates
+	collisions in the BTB with a possible kernel branch instruction
+	at address A. This block of code should also contain an instruction
+	to measure the time to execute the jump.
+
+	3. The target branch instruction in the kernel is activated by
+	executing the identified system call.
+
+	4. The block of code in the spy process is executed a number of times
+	and the number of cycles taken to execute it is recorded.
+
+4. Analyze the results. The block with higher average cycle measurement
+corresponds to the situation when the jump instruction in the spy's code
+block collides with the kernel branch at address **A**.
+
+##### Recovering User Process Address Bits
+
+Much like the attack for KASLR, the attack
+used for ASLR measure the time it takes for a branch
+instruction to execute.
+
+To perform the attack we:
+
+1. Analyze victim executable file to find
+functions that can be triggered and also allocate
+jump instructions in such functions.
+
+2. The spy process performs the following steps for
+each possible address **A** where the victim branch
+instruction can be:
+
+	1. Allocate buffer at required address.
+
+	2. Fills buffer with code containing a single
+	jump instruction at address **A** and code to
+	measure time.
+
+	3. Trigger the desired function in victim
+	process in order to force victim to create a
+	BTB entry.
+
+	4. Waits for activity to complete.
+
+	5. It executes the jump block several times
+	and measures the execution time.
+
+3. Finally, the spy discovers the address, just like
+in the KASLR attack.
+
+#### Downfalls
+
+* The attack to find out User process addresses doesn't
+work when the spy and victim process don't reside in the
+same core.
+
+#### Optimizations
+
+To ensure that the victim and spy processes execute in
+the same core (_co-residency_), we can:
+
+	* Inject dummy processes in all other virtual cores
+	in order to alter the schduling algorithm.
+
+	* Execute spy on all virtual cores.
+
+In linux, processes can use `sched_setaffinity()` to schedule
+itself to a specific core, which can be useful in both methods
+above.
+
+#### Setup
