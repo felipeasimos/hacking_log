@@ -22,6 +22,11 @@ http://euler.mat.uson.mx/~havillam/ca/CS323/0708.cs-323007.html \
 https://digitalassets.lib.berkeley.edu/techreports/ucb/text/CSD-89-553.pdf \
 https://www.youtube.com/watch?v=T8_Jvt2T6d0&list=PL1C2GgOjAF-IWC1AEXqWKFmAgZdQRJfZ6 \
 https://en.wikipedia.org/wiki/Branch_(computer_science) \
+https://en.wikipedia.org/wiki/Translation_lookaside_buffer \
+https://download.vusec.net/papers/anc_ndss17.pdf \
+https://github.com/vusec/revanc \
+https://www.vusec.net/projects/anc/ \
+http://palms.ee.princeton.edu/system/files/SP_vfinal.pdf \
 
 A side channel attack is any attack that is based on information
 gained from the implementation of a computer system, rather than
@@ -68,6 +73,7 @@ Name | Observes | Footprint | Speed | Deduce |
 [Flush+Reload](#flushreload) | Times it takes to access memory | Cache hits/misses rate, memory access | (Much slower than Flush+Flush) | If victim accessed memory
 [Flush+Flush](#flushflush) | Execution time of `flush` instruction | Minimal number of cache hits | 496 KB/s | If victim accessed memory
 [Jump Over ASLR](#jump-over-aslr) | Times it takes to execute system call/code from another process | Depend on choosen targets | Depend on choosen targets | Address of a specific instruction from kernel or a running process
+Prime+Probe | 
 AnC | 
 Keyboard Acoustic Emanations | Sound from key presses | None, if using same device as victim's, else it depends on a physical device nearby | Hardware dependent | What key where pressed
 
@@ -562,13 +568,113 @@ same core.
 To ensure that the victim and spy processes execute in
 the same core (_co-residency_), we can:
 
-	* Inject dummy processes in all other virtual cores
-	in order to alter the schduling algorithm.
+* Inject dummy processes in all other virtual cores
+in order to alter the schduling algorithm.
 
-	* Execute spy on all virtual cores.
+* Execute spy on all virtual cores.
 
 In linux, processes can use `sched_setaffinity()` to schedule
 itself to a specific core, which can be useful in both methods
 above.
 
-#### Setup
+### Prime+Probe
+
+
+
+### AnC
+
+ASLR can be breaked by measuring how long it takes the MMU
+to translate virtual addresses to physical addresses.
+
+To do so, the researchers of this exploit had to implement
+better synthtic timers in javascript, to run the exploit in
+the browser.
+
+#### Key Concepts
+
+* For every virtual address the processor access, the MMU
+translates it to a physical address.
+
+* Each core has a __Translation Lookaside Buffer (TLB)__
+that stores the recent translations, to speed up memory access.
+
+* When a __TLB miss__ occur, the MMU needs to walk the __Page
+Tables (PTs)__ of the process to perform the translation.
+
+* To improve performance in __TLB misses__, __PTs__ are stored in the
+fast data caches just like the process data.
+
+* When the MMU do a __PT__ walk, it reads __Page Table Entries (PTEs)__ for
+each layer in the __Multilayer Tables__ and stores each one in different
+cache lines in __L1D__ (first layer cache, which stores only data), if
+they are not there already.
+
+* In intel core microarchitecture there are three levels of CPU caches:
+
+	1. __L1D__ (data) and __L1I__ (instructions) are closest to
+	the cache.
+
+	2.  __L2__ is unified for both data and instructions. __L1__ and
+	__L2__ caches are private to each core. Data present in __L1__ is
+	not necessarily present in __L2__.
+
+	3. __L3__ is shared amongt every core. All data in __L1__ and
+	__L2__ are also in __L3__.
+
+* With the key concepts above in mind, we need to answer 3 questions
+to pull off this exploit:
+
+	1. Which cache lines are loaded from memory during the __PT__ walk?
+
+		* Since the __Last Level Cache (LLC)__ is inclusive to
+		__L1D__ (LLc is usually __L3__), if we evict a cache line
+		from __L3__, it would also evict it from __L1D__.
+
+		* Every loaded __PTE__ will be in __LLC__ and __L1D__.
+
+		* We can monitor cache sets at the __LLC__ and detect
+		MMU activity due to a __PT__ walk at the affected cache
+		sets. It is enough to identify the offset of the __PTE__
+		cache lines within a page.
+
+	2. Which page offsets do these cache lines belong to?
+
+		* Given 2 different physical memory pages, if their first
+		cache lines belong to the same cache set, then their
+		other cache lines share cache sets as well.
+
+		* Given an identified cache set with __PT__ activity, we
+		can determine the offset of the cache line that hosts the
+		__PTE__.
+
+	3. What are the offsets of the target __PTEs__ in these cache
+	lines?
+
+		* Access pages that are `x` bytes apart from our target
+		virtual address `v`. If we do that for different values,
+		we can see a change in one of the cache sets that show
+		MMU activity.
+
+		* By monitoring these cache sets we can see a "moving"
+		cache set (the new cache set affected directly follow
+		the previous one).
+
+#### Attack
+
+There is some actions we need to be able to perform to pull this off:
+
+1. Trigger __PT__ walks:
+
+2. Prime+Probe and the MMU signal
+
+3. Cache color
+
+4. Evict+Time attack on the MMU
+
+5. Sliding PT Entries
+
+6. ASLR Solver
+
+7. Evicting Page Table Caches
+
+8. Dealing With Noise

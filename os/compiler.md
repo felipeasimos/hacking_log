@@ -3,9 +3,7 @@
 sources:
 http://ce.sharif.edu/courses/94-95/1/ce414-2/resources/root/Text%20Books/Compiler%20Design/Alfred%20V.%20Aho,%20Monica%20S.%20Lam,%20Ravi%20Sethi,%20Jeffrey%20D.%20Ullman-Compilers%20-%20Principles,%20Techniques,%20and%20Tools-Pearson_Addison%20Wesley%20(2006).pdf
 
-## Section 1
-
-### Section 1.1
+## Overview
 
 * __Compiler__ - Program that reads a program in _source_ language and
 translate it to an equivalent program in a _target_ language, reporting
@@ -77,7 +75,7 @@ a _preprocessor_, a _linker_, a _assembler_, a _loader_, etc.
 			 relocatable object files
 ```
 
-### Section 1.2
+## Basic Concepts
 
 Compiler is divided in two parts:
 
@@ -110,37 +108,104 @@ Some compilers have machine-independent optimization phases between
 the front and the back end. It is optional so one or two optimization
 phases may be missing.
 
-#### Lexical Analysis
+## Summary Of Phases
 
-_Lexical Analysis_ or _scanning_ is the first phase of the
-compiler. It takes in a stream of chracters making up the
-source program and groups them into meaningful sequences
-called __lexemes__. For each __lexeme__, the lexical
-analyzer produces as output a __token__ of the form:
+From source code:
 
 ```
-<token_name, attribute_value>
+position = initial + rate * 60
 ```
 
-* __`token_name`__ - abstract symbol used during syntax
-analysis.
+1. __Lexical analysis (scanning)__ - Takes a stream of characters
+making up the source code and groups them into meaningful sequences
+called __lexemes__. For each __lexeme__, the lexical analyzer
+produces as output a __token__ of the form:
 
-* __`attribute_value`__ - points to an entry to the symbol table
-for this token.
+<_token-name_,_attribute-value_>
 
-the token is passed to the subsequent phase, syntax analysis.
+Each token has a name and optionally a value.
 
-#### Summary
+```
+<id,1> <=> <id,2> <+> <id,3> <*> <60>
+```
 
-1. Lexical analysis - Generate tokens
+2. __Syntax analysis__ - Generates syntax trees from
+the tokens:
 
-2. Syntax analysis - Generates token trees
+```   <=>
+     /   \
+    /     \
+<id,1>    <+>
+         /   \
+	/     \
+    <id,2>    <*>
+             /   \
+	    /     \
+	<id,3>    <60>
+```
 
-3. Semantic analysis 
+3. __Semantic analysis__
 
 	* Check semantic consistency
 	* Gathers type information (saved in syntax tree)
 	* Type checking: check if each operator has matching operands
-	* Implicit conversions
+	* Implicit conversions (inttofloat)
 
-4. Intermediate code generation - 
+```   <=>
+     /   \
+    /     \
+<id,1>    <+>
+         /   \
+	/     \
+    <id,2>    <*>
+             /   \
+	    /     \
+	<id,3>   inttofloat
+		    |
+		    |
+		    60
+```
+
+
+4. __Intermediate code generation__ - Generate explicit low-level or
+machine-like intermediate representation, which we can think of as
+a program for an abstract machine (it is machine-independent). This
+representation should:
+
+	* Be easy to produce
+	* Should be easy to translate into the target machine
+
+An example of this is _three-address code_, which consists of a
+sequence of assembly-like instructions with three operands per
+instruction, each operand acting like a register:
+
+```
+t1 = inttofloat(60)
+t2 = id3 * t1
+t3 = id2 + t2
+id1 = t3
+```
+
+5. __Code optimization__ - Get results at compile time. Eliminate
+redundant code. For example, instead of calling `inttofloat` we
+can just change `60` to `60.0`. In doing so, the line
+`t1 = inttofloat(60)` is not necessary, since we can just
+change `t1` in the other lines for `60.0`.
+
+```
+t2 = id3 * 60.0
+t3 = id2 + t2
+id1 = t3
+```
+
+6. __Code generation__ - Translates the independent code into
+the target language. If the target is machine code, registers
+or memory locations are selected for each variable used.
+
+```
+LDF R2,id3
+MULF R2,R2, #60.0
+LDF R1,id2
+ADDF R1,R1,R2
+STF id1,R1
+```
