@@ -209,3 +209,35 @@ LDF R1,id2
 ADDF R1,R1,R2
 STF id1,R1
 ```
+
+## Passes
+
+Activities from several __phases__ may be grouped together
+in a __pass__.
+
+## Tools
+
+A compiler may be divided in tools:
+
+* __parser generators__ - produce syntax analyzers from a
+grammatical description of the language.
+
+* __scanner generators__ - produce lexical analyzers from
+a regular-expression description of the language tokens.
+
+* __syntax-directed translation engines__ - produce
+collection of routines for walking a parse tree and
+generating intermediate code.
+
+* __code-generator generators__ - produce a code generator
+from a set of translation rules. Each rule tells how to
+convert an operation from an intermediate language into
+machine language for a target machine.
+
+* __data-flow analysis engines__ - Gather information on
+how data is sent from one part of a program to another.
+
+* __compiler-contruction toolkits__ - collection of
+many tools.
+
+

@@ -6,6 +6,8 @@ dependencies:
 sources:
 https://eprint.iacr.org/2013/448.pdf \
 http://wiki.inf.ufpr.br/maziero/lib/exe/fetch.php?media=socm:socm-livro.pdf \
+https://download.vusec.net/papers/anc_ndss17.pdf
+https://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.html
 
 In Paging, virtual memory is organized by blocks of memory called
 __Pages__, each one usually being 4 KB in size (4096 bytes).
@@ -88,7 +90,7 @@ that the page was changed. Also used by disk paging algorithms.
 There also can be bits for caching, if it is in the disk, page size
 (if more than one is being used), and bits useful for kernel algorithms.
 
-### Multilayer Tables
+### Table Tree
 
 Data structure used for better management of __Page Tables__.
 
@@ -104,6 +106,38 @@ layer the next 10, and so on.
 The benefit of this is that now we don't waste that much memory with
 each table: since the first bits in the first layer, lower layers don't
 need to repeat these first bits.
+
+#### Common implementation
+
+The statements below apply to most x86\_64 architectures.
+
+* Only 48 of the 64 bits are used for virtual addressing.
+
+* Since a page size is usually 4 Kb (4096 Bytes), the last
+12 bits are always the same when addressing a page, leaving
+36 bits that we actually will be using.
+
+* Usually there are 4 layers of __Page Tables__ in a
+__Page Table Tree (PTT)__. Since we need to determine 36 bits,
+each layer has 9 bits.
+
+* The lower layer has a total size equal to a plain __PT__.
+
+* Every __PT__ occupies exactly a page, and thus each __PT__
+has the size of a page (4096 bytes).
+
+* Each __PT__ has 512 __Page Table Entrys (PTEs)__, since we
+are using 9 bits at each layer and 2^9 is 512.
+
+* 4096/512 = 8 (size of page/number of entries). Which makes sense
+since we need 8 bytes to write an address to an entry. This is what
+the inner nodes of the __PTT__ are: a bunch of addresses. We know
+what address we want based on the offset from the begginning of the
+page (which is also the begging of the __PT__).
+
+* In the final node we will have the physical address.
+
+![Multilevel Page Table](https://media.geeksforgeeks.org/wp-content/uploads/20190608174704/multilevel.png)
 
 ### Page Table Caching
 

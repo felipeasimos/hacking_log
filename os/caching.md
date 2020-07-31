@@ -60,7 +60,7 @@ When the processor wants to access an address, the closest memory layer:
 Obs.: Writing the requested address when the block is full and the address
 is not in it will force us to evict another address from the block, we
 will talk about this later.
-
+ 
 ### Indexing
 
 #### Sets and Ways
@@ -99,7 +99,9 @@ an address belongs to.
 
 * __OFFSET__ - Offset of an address within a cache block. Addresses which
 the only difference is the __OFFSET__ will all be mapped to the same
-block (close addresses get mapped to the same block).
+block (close addresses get mapped to the same block). A consequence of
+this is that every block in the lower layer maps to a single block in the
+upper layer.
 
 The size of each field depends on the number of __ways__ and __sets__.
 

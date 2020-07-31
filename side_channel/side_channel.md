@@ -2,6 +2,7 @@
 
 dependencies:
 	[Paging](../os/paging.md)
+	[Caching](../os/caching.md)
 
 sources:
 https://en.wikipedia.org/wiki/Side-channel_attack \
@@ -15,6 +16,7 @@ https://www.felixcloutier.com/x86/lfence \
 https://github.com/IAIK/flush_flush \
 https://github.com/nepoche/Flush-Reload \
 https://eprint.iacr.org/2020/907.pdf \
+http://www.cs.ucr.edu/~nael/pubs/micro16.pdf
 https://people.eecs.berkeley.edu/~kubitron/courses/cs252-S11/lectures/lec09-prediction2.pdf \
 https://en.wikipedia.org/wiki/Branch_target_predictor \
 http://cseweb.ucsd.edu/~j2lau/cs141/week8.html \
@@ -27,6 +29,7 @@ https://download.vusec.net/papers/anc_ndss17.pdf \
 https://github.com/vusec/revanc \
 https://www.vusec.net/projects/anc/ \
 http://palms.ee.princeton.edu/system/files/SP_vfinal.pdf \
+https://www.youtube.com/watch?v=vpGI1ggKzC4
 
 A side channel attack is any attack that is based on information
 gained from the implementation of a computer system, rather than
@@ -68,12 +71,12 @@ here there is a simple table of what kind of information
 they observe, what they can deduce from it, the footprint
 left behind and how much information per second it can gather:
 
-Name | Observes | Footprint | Speed | Deduce |
------|----------|-----------|-------|------|
-[Flush+Reload](#flushreload) | Times it takes to access memory | Cache hits/misses rate, memory access | (Much slower than Flush+Flush) | If victim accessed memory
-[Flush+Flush](#flushflush) | Execution time of `flush` instruction | Minimal number of cache hits | 496 KB/s | If victim accessed memory
-[Jump Over ASLR](#jump-over-aslr) | Times it takes to execute system call/code from another process | Depend on choosen targets | Depend on choosen targets | Address of a specific instruction from kernel or a running process
-Prime+Probe | 
+Name | Observes | Footprint | Speed | Deduce | Paper Link |
+-----|----------|-----------|-------|--------|------------|
+[Flush+Reload](#flushreload) | Times it takes to access memory | Cache hits/misses rate, memory access | (Much slower than Flush+Flush) | If victim accessed memory | https://eprint.iacr.org/2013/448.pdf
+[Flush+Flush](#flushflush) | Execution time of `flush` instruction | Minimal number of cache hits | 496 KB/s | If victim accessed memory | https://gruss.cc/files/flushflush.pdf
+[Jump Over ASLR](#jump-over-aslr) | Times it takes to execute system call/code from another process | Depend on choosen targets | Depend on choosen targets | Address of a specific instruction from kernel or a running process | http://www.cs.ucr.edu/~nael/pubs/micro16.pdf
+[Prime+Probe](#primeprobe) | Times it takes to access memory | Cache hits/misses rate, memory access | slower than Flush+Reload | If victim accessed cache line | http://palms.ee.princeton.edu/system/files/SP_vfinal.pdf (the blackhat video is pretty great too)
 AnC | 
 Keyboard Acoustic Emanations | Sound from key presses | None, if using same device as victim's, else it depends on a physical device nearby | Hardware dependent | What key where pressed
 
@@ -331,6 +334,69 @@ Similar to the [Flush+Reload](#flushreload) setup. Just time how
 long misses and hit take (by forcing them to happen with `clflush`)
 to find the optimal threshold.
 
+### Prime+Probe
+
+Find cache set the victim is using.
+
+#### Key Concepts
+
+* When data is not in the cache a __cache miss__ occur.
+
+* When a __cache miss__ occur, it takes some time. More time
+than it would take in a __cache hit__ (if the data was already
+in the cache).
+
+#### Vulnerability
+
+* Since __cache misses__ take longer than __cache hits__, we can
+infer when a cache line is not in the cache.
+
+* LLC is inclusive with the caches closer to the cache in most
+architectures.
+
+#### Attack
+
+1. __Prime__:
+
+	1. The attacker chooses a cache-sized memory buffer.
+
+	2. Attacker access all the lines in the buffer, filling
+	the cache with its data (controlling the state of the buffer).
+
+2. When the victim executes, it will overwrite some
+cache lines.
+
+3. __Probe__: The attacker can now access the entire buffer again and
+see what lines take longer to access.
+
+Lines that take longer are the ones the victim is using, and thus
+causing a cache miss.
+
+#### Downfalls
+
+* Can take some time.
+
+#### Optimizations
+
+* Avoid Probing all the cache (too much stuff!) as it will take
+some time. Probing a single set at a time.
+
+* LLC is divided in _slices_. Each core has its _slice_ and its
+access to its slice is faster than to other cores slices. We can
+find out which line belongs to which core:
+
+	1. Start with a buffer with size 0.
+
+	2. Iteratively add lines to the pool as long as there is
+	no self-eviction.
+
+	3. Self-eviction is detected by priming a potential new
+	member accessing the current pool and timing other access
+	to the potential new member.
+
+	4. Repeat until you have a buffer that covers the full
+	cache set.
+
 ### Jump Over ASLR
 
 Uses the BTB (Branch Target Buffer) to recover all
@@ -583,12 +649,12 @@ above.
 
 ### AnC
 
-ASLR can be breaked by measuring how long it takes the MMU
-to translate virtual addresses to physical addresses.
+Just through memory accesses, we can infer which cache sets
+have been accessed after a targeted MMU __Page Table__ walk.
 
-To do so, the researchers of this exploit had to implement
-better synthtic timers in javascript, to run the exploit in
-the browser.
+Knowing the cache sets we can identify the offsets of the
+target __Page Table__ entries at each __Page Table__ level,
+hence derandomizing ASLR.
 
 #### Key Concepts
 
@@ -599,17 +665,22 @@ translates it to a physical address.
 that stores the recent translations, to speed up memory access.
 
 * When a __TLB miss__ occur, the MMU needs to walk the __Page
-Tables (PTs)__ of the process to perform the translation.
+Tables Tree (PTT)__ of the process to perform the translation.
 
 * To improve performance in __TLB misses__, __PTs__ are stored in the
-fast data caches just like the process data.
+fast data caches just like the process data, and therefore also in the
+LLC.
 
-* When the MMU do a __PT__ walk, it reads __Page Table Entries (PTEs)__ for
-each layer in the __Multilayer Tables__ and stores each one in different
+* When the MMU do a __PTT__ walk, it reads __PTEs__ for
+each layer in the __PTT__ and stores each one in different
 cache lines in __L1D__ (first layer cache, which stores only data), if
-they are not there already.
+they are not there already (We know they are in different lines because
+each __PT__ is a page, and thus each entry will be in a different page).
 
-* In intel core microarchitecture there are three levels of CPU caches:
+* Since ASLR is used as a security mechanism, the __PTs__ are now sensitive
+information, which is kept in the same storage as our program's data!
+
+* Usually in a core microarchitecture there are three levels of CPU caches:
 
 	1. __L1D__ (data) and __L1I__ (instructions) are closest to
 	the cache.
@@ -634,8 +705,8 @@ to pull off this exploit:
 
 		* We can monitor cache sets at the __LLC__ and detect
 		MMU activity due to a __PT__ walk at the affected cache
-		sets. It is enough to identify the offset of the __PTE__
-		cache lines within a page.
+		sets (Prime+Probe). It is enough to identify the offset
+		of the __PTE__ cache lines within a page.
 
 	2. Which page offsets do these cache lines belong to?
 
