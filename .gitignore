@@ -10,3 +10,11 @@ binary_exploitation/*/*/*
 !binary_exploitation/Makefile
 !binary_exploitation/*/*/*.*
 !binary_exploitation/*/*/Makefile
+
+#ignore all executables in side_channel folder
+side_channel/*/*
+!side_channel/*/*.c
+!side_channel/*/*.cpp
+!side_channel/*/*.h
+!side_channel/*/*.hpp
+!side_channel/*/Makefile
