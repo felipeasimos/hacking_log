@@ -643,10 +643,6 @@ In linux, processes can use `sched_setaffinity()` to schedule
 itself to a specific core, which can be useful in both methods
 above.
 
-### Prime+Probe
-
-
-
 ### AnC
 
 Just through memory accesses, we can infer which cache sets
