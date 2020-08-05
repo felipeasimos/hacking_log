@@ -7,6 +7,7 @@
 
 #include "../cache_timing_attack/cache_timing_attack.hpp"
 #include "cache_info/cache_info.hpp"
+#include "../visualizer/visualizer.hpp"
 
 //this is value is used to determine when a "hill" is coming
 //in the distribution graph. Since the histograms are normalized

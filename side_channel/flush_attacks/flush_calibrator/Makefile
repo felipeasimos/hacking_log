@@ -1,7 +1,8 @@
 CXX:=g++ -std=c++17
 object_files:=$(addsuffix .o, $(basename $(filter-out runner.cpp,$(wildcard *.cpp))))
 
-DEPS:=cache_info/cache_info_final.o ../flush_flush/flush_flush_final.o ../flush_reload/flush_reload_final.o ../cache_timing_attack/cache_timing_attack_final.o
+DEPS:=cache_info/cache_info_final.o ../flush_flush/flush_flush_final.o ../flush_reload/flush_reload_final.o \
+	../cache_timing_attack/cache_timing_attack_final.o ../visualizer/visualizer_final.o
 
 UNIQUE_DEPS:=cache_info/cache_info_final.o
 

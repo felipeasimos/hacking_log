@@ -19,3 +19,4 @@ side_channel/*/*/*
 !side_channel/*/*/*.hpp
 !side_channel/*/*/Makefile
 !side_channel/*/*/*.py
+!side_channel/*/*/*.txt

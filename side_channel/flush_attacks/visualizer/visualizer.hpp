@@ -1,13 +1,16 @@
-#ifndef CACHE_TIMING_ATTACK_HPP
-#define CACHE_TIMING_ATTACK_HPP
+#ifndef VISUALIZER_HPP
+#define VISUALIZER_HPP
 
 #include <memory>
 #include <string>
 #include <map>
 #include <vector>
 #include <ios>
+#include <utility>
 
 #include <stdio.h>
+
+#define MIN_HILL_VALUE 0.000100
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 
@@ -18,12 +21,14 @@ class Visualizer {
 		struct impl;
 		std::unique_ptr<impl> pimpl;
 
+		unsigned int find_farthest_peak(hit_miss_map&);
+
 		FILE* open_file(const char*);
 		void csv_write_row(FILE*, std::vector<std::string>);
 	public:
-		void to_csv(const char* filename);
+		void to_csv(hit_miss_map& map, const char* filename);
 
-		Visualizer(hit_miss_map& map);
+		Visualizer();
 		~Visualizer();
 
 		Visualizer(const Visualizer&);

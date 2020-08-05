@@ -2,9 +2,23 @@
 
 struct Visualizer::impl{
 
-	std::string filename;
-	hit_miss_map map;
 };
+
+unsigned int Visualizer::find_farthest_peak(hit_miss_map& histograms){
+
+	std::pair<unsigned int, double> peak1(0,0.0), peak2(0,0.0);
+
+	for(auto const& [ x, sample ] : histograms){
+
+		if( peak1.second < sample.first )
+			peak1 = std::make_pair( x, sample.first );
+
+		if( peak2.second < sample.second )
+			peak2 = std::make_pair( x, sample.second );
+	}
+
+	return std::max(peak1.first, peak2.first);
+}
 
 FILE* Visualizer::open_file(const char* filename){
 
@@ -24,9 +38,9 @@ void Visualizer::csv_write_row(FILE* file, std::vector<std::string> values){
 	fprintf(file, "\r\n");
 }
 
-void Visualizer::to_csv(const char* filename){
+void Visualizer::to_csv(hit_miss_map& map, const char* filename){
 
-	FILE* file = open_file(pimpl->filename.c_str());
+	FILE* file = open_file(filename);
 
 	//headers
 	csv_write_row(
@@ -38,7 +52,14 @@ void Visualizer::to_csv(const char* filename){
 			}
 		);
 
-	for( auto const& [ x, hit_miss ] : pimpl->map ){
+	unsigned int farthest_peak_x = find_farthest_peak(map);
+
+	for( auto const& [ x, hit_miss ] : map ){
+
+		if( x > farthest_peak_x &&
+				hit_miss.first < MIN_HILL_VALUE &&
+				hit_miss.second < MIN_HILL_VALUE )
+			break;
 
 		csv_write_row(
 				file,
@@ -53,10 +74,8 @@ void Visualizer::to_csv(const char* filename){
 	fclose(file);
 }
 
-Visualizer::Visualizer(hit_miss_map& map) : pimpl(std::make_unique<Visualizer::impl>()){
-
-	pimpl->map = map;
-}
+Visualizer::Visualizer()
+	: pimpl(std::make_unique<Visualizer::impl>()){}
 
 Visualizer::~Visualizer()=default;
 

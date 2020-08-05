@@ -5,6 +5,7 @@ using FC = FlushCalibrator;
 struct FC::impl{
 
 	CacheInfo cache = CacheInfo();
+	Visualizer visualizer;
 	char* test_memory;
 	char* test_memory_base_address;
 };
@@ -53,8 +54,8 @@ void FC::normalize_histograms(hit_miss_map& histograms, unsigned int num_samples
 
 bool FC::is_hit_faster(hit_miss_map& histograms){
 
-	std::pair<unsigned int, double> hit_max;
-	std::pair<unsigned int, double> miss_max;
+	std::pair<unsigned int, double> hit_max(0,0.0);
+	std::pair<unsigned int, double> miss_max(0,0.0);
 
 	for( auto const& [x, hist] : histograms ){
 
@@ -77,8 +78,8 @@ double FC::pair_idx(std::pair<double, double> hist_sample, unsigned int idx){
 
 std::pair<unsigned int, unsigned int> FC::find_peak_and_valley(hit_miss_map& histograms, CacheTimingAttack& attack){
 
-	std::pair<unsigned int, double> peak_max;
-	std::pair<unsigned int, double> valley_min;
+	std::pair<unsigned int, double> peak_max(0,0.0);
+	std::pair<unsigned int, double> valley_min(0,0.0);
 
 	unsigned int peak_i = !attack.hit_is_faster;
 	unsigned int valley_i = attack.hit_is_faster;
@@ -99,7 +100,7 @@ std::pair<unsigned int, unsigned int> FC::find_peak_and_valley(hit_miss_map& his
 
 unsigned int FC::_find_threshold(hit_miss_map& map, unsigned int valley_x, unsigned int peak_x){
 
-	std::pair<unsigned int, double> threshold;
+	std::pair<unsigned int, double> threshold(0,0.0);
 
 	for(unsigned int x=peak_x; x < valley_x; x++){
 
@@ -138,7 +139,9 @@ hit_miss_map FC::calibrate(CacheTimingAttack& attack, unsigned int num_samples){
 
 void FC::histogram(CacheTimingAttack& attack, const char* filename, unsigned int num_samples){
 
+	hit_miss_map map = calibrate(attack, num_samples);
 
+	pimpl->visualizer.to_csv(map, filename);
 }
 
 FC::FlushCalibrator() : pimpl(std::make_unique<FC::impl>()){

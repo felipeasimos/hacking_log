@@ -42,3 +42,9 @@ TEST_F(FlushCalibratorTest, calibration_flush_reload){
 
 	ASSERT_TRUE(fr.hit_is_faster);
 }
+
+TEST_F(FlushCalibratorTest, visualizer){
+
+	calibrator.histogram(ff, "ff.csv");
+	calibrator.histogram(fr, "fr.csv");
+}
