@@ -2,7 +2,7 @@
 
 using FF=FlushFlush;
 
-void FF::operation(void* addr){
+void FF::operation(void* addr) const {
 
 	asm volatile ("clflush (%0)\n"
 			:

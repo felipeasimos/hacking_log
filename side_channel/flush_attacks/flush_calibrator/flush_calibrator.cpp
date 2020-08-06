@@ -32,7 +32,6 @@ unsigned int FC::miss(CacheTimingAttack& attack, void* addr){
 
 void FC::hit_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){
 
-	//get values
 	for(unsigned int i=0; i < num_samples; i++)
 		map[hit(attack, pimpl->test_memory)].first++;
 }
@@ -59,10 +58,8 @@ bool FC::is_hit_faster(hit_miss_map& histograms){
 
 	for( auto const& [x, hist] : histograms ){
 
-		//hit
 		if( hist.first > hit_max.second ) hit_max = std::make_pair(x, hist.first);
 
-		//miss
 		if( hist.second > miss_max.second ) miss_max = std::make_pair(x, hist.second);
 	}
 
@@ -104,7 +101,7 @@ unsigned int FC::_find_threshold(hit_miss_map& map, unsigned int valley_x, unsig
 
 	for(unsigned int x=peak_x; x < valley_x; x++){
 
-		std::pair<unsigned int, double> sample = map[x];
+		std::pair<double, double> sample = map[x];
 
 		if( threshold.second < sample.first + sample.second )
 			threshold = std::make_pair( x, sample.first + sample.second );
@@ -116,6 +113,7 @@ unsigned int FC::_find_threshold(hit_miss_map& map, unsigned int valley_x, unsig
 unsigned int FC::find_threshold(CacheTimingAttack& attack, hit_miss_map& histograms){
 
 	attack.hit_is_faster = is_hit_faster(histograms);
+
 	auto [valley_x, peak_x] = find_peak_and_valley(histograms, attack);
 
 	attack.threshold = _find_threshold(histograms, valley_x, peak_x);

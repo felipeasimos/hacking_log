@@ -2,7 +2,7 @@
 
 using FR=FlushReload;
 
-void FR::operation(void* addr){
+void FR::operation(void* addr) const {
 
 	asm volatile ("movq (%0),%%rax\n"
 			: 

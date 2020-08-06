@@ -6,7 +6,7 @@
 class FlushFlush : public CacheTimingAttack {
 
 	public:
-		void operation(void* addr);
+		void operation(void* addr) const;
 
 		FlushFlush();
 
