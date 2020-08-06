@@ -8,7 +8,7 @@ UNIQUE_DEPS:=cache_info/cache_info_final.o
 
 LD_FLAGS:=-lgtest_main -lgtest -lpthread
 
-.PHONY: test basic_clean clean done runner plot
+.PHONY: test basic_clean clean done runner $(DEPS)
 
 test: CXXFLAGS := -fPIC -g -O0
 test: runner

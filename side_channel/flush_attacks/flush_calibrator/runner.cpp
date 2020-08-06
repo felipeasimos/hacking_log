@@ -22,44 +22,20 @@ class FlushCalibratorTest : public ::testing::Test {
 		FlushReload fr;
 		FlushCalibrator calibrator;
 
-		unsigned int number_of_probes = 1000000;
 };
 
 TEST_F(FlushCalibratorTest, calibration_flush_flush){
 
-	hit_miss_map map = calibrator.calibrate(ff, number_of_probes);
+	calibrator.histogram(ff, "ff.csv");
 
-	printf("flush_flush threshold: %u\n", ff.threshold);
-
-	ASSERT_GT(ff.threshold, 130);
-	ASSERT_LT(ff.threshold, 150);
-
-	ASSERT_FALSE(ff.hit_is_faster);
+	printf("flush_flush hit_begin: %u\n", ff.hit_begin);
+	printf("flush_flush hit_end: %u\n", ff.hit_end);
 };
 
 TEST_F(FlushCalibratorTest, calibration_flush_reload){
 
-	hit_miss_map map = calibrator.calibrate(fr, number_of_probes);
-
-	printf("flush_reload threshold: %u\n", fr.threshold);
-
-	ASSERT_GT(fr.threshold, 80);
-	ASSERT_LT(fr.threshold, 100);
-
-	ASSERT_TRUE(fr.hit_is_faster);
-}
-
-TEST_F(FlushCalibratorTest, visualizer){
-
-	calibrator.histogram(ff, "ff.csv");
 	calibrator.histogram(fr, "fr.csv");
-}
 
-TEST_F(FlushCalibratorTest, hit_is_faster){
-
-	calibrator.calibrate(ff, number_of_probes);
-	calibrator.calibrate(fr, number_of_probes);
-
-	ASSERT_FALSE(ff.hit_is_faster);
-	ASSERT_TRUE(fr.hit_is_faster);
+	printf("flush_reload hit_begin: %u\n", fr.hit_begin);
+	printf("flush_reload hit_end: %u\n", fr.hit_end);
 }

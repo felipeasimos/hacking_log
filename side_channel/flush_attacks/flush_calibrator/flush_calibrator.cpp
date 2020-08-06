@@ -51,95 +51,76 @@ void FC::normalize_histograms(hit_miss_map& histograms, unsigned int num_samples
 	}
 }
 
-bool FC::is_hit_faster(hit_miss_map& histograms){
+bool FC::is_distance_enough(std::pair<double, double> hit_miss){
 
-	std::pair<unsigned int, double> hit_max(0,0.0);
-	std::pair<unsigned int, double> miss_max(0,0.0);
-
-	for( auto const& [x, hist] : histograms ){
-
-		if( hist.first > hit_max.second ) hit_max = std::make_pair(x, hist.first);
-
-		if( hist.second > miss_max.second ) miss_max = std::make_pair(x, hist.second);
-	}
-
-	//hit is faster if its peak comes first
-	return hit_max.first < miss_max.first;
+	return !hit_miss.second ||
+		( hit_miss.first/
+		 (hit_miss.first+hit_miss.second) ) >= sensibility;
 }
 
-double FC::pair_idx(std::pair<double, double> hist_sample, unsigned int idx){
+unsigned int FC::find_left_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
 
-	if(idx) return hist_sample.second;
-	else return hist_sample.first;
+	for(unsigned int i = peak_x; i > 0; i--)
+
+		if( !is_distance_enough(hist[i]) )
+			return i + (peak_x!=i);
+
+	return peak_x;
 }
 
-std::pair<unsigned int, unsigned int> FC::find_peak_and_valley(hit_miss_map& histograms, CacheTimingAttack& attack){
+unsigned int FC::find_right_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
 
-	std::pair<unsigned int, double> peak_max(0,0.0);
-	std::pair<unsigned int, double> valley_min(0,0.0);
+	for(unsigned int i=peak_x; i < hist.rbegin()->first; i++)
 
-	unsigned int peak_i = !attack.hit_is_faster;
-	unsigned int valley_i = attack.hit_is_faster;
+		if( !is_distance_enough(hist[i]) )
+			return i - (peak_x!=i);
 
-	for( auto const& [ x, sample ] : histograms ){
-
-		//peak
-		if( pair_idx(sample, peak_i) > peak_max.second )
-			peak_max = std::make_pair(x, pair_idx(sample, peak_i));
-
-		//valley (get the first value greater than FC_VALLEY_MIN)
-		if( pair_idx(sample, valley_i) > FC_VALLEY_MIN && !valley_min.second )
-			valley_min = std::make_pair(x, pair_idx(sample, valley_i));
-	}
-
-	return std::make_pair(valley_min.first, peak_max.first);  
+	return peak_x;
 }
 
-unsigned int FC::_find_threshold(hit_miss_map& map, unsigned int valley_x, unsigned int peak_x){
+unsigned int FC::find_hit_peak(hit_miss_map& hist){
 
-	std::pair<unsigned int, double> threshold(0,0.0);
+	std::pair<unsigned int, double> peak(0, 0.0);
 
-	for(unsigned int x=peak_x; x < valley_x; x++){
+	for(auto const& [ x, sample ] : hist)
 
-		std::pair<double, double> sample = map[x];
+		if( peak.second < sample.first )
+			peak = std::make_pair(x, sample.first);
 
-		if( threshold.second < sample.first + sample.second )
-			threshold = std::make_pair( x, sample.first + sample.second );
-	}
-
-	return threshold.first;
+	return peak.first;
 }
 
-unsigned int FC::find_threshold(CacheTimingAttack& attack, hit_miss_map& histograms){
+void FC::find_hit_range(CacheTimingAttack& attack, hit_miss_map& histograms){
 
-	attack.hit_is_faster = is_hit_faster(histograms);
+	unsigned int hit_peak = find_hit_peak(histograms);
 
-	auto [valley_x, peak_x] = find_peak_and_valley(histograms, attack);
-
-	attack.threshold = _find_threshold(histograms, valley_x, peak_x);
-
-	return attack.threshold;
+	attack.hit_begin = find_left_hit_boundry(histograms, hit_peak);
+	attack.hit_end = find_right_hit_boundry(histograms, hit_peak);
 }
 
-hit_miss_map FC::calibrate(CacheTimingAttack& attack, unsigned int num_samples){
+hit_miss_map FC::calibrate(CacheTimingAttack& attack, double sensibility, unsigned int num_samples) {
 
 	//time: { hits, misses }
 	hit_miss_map histograms;
+
+	this->sensibility = sensibility;
 
 	hit_loop(attack, histograms, num_samples/2);
 	miss_loop(attack, histograms, num_samples/2);
 	normalize_histograms(histograms, num_samples);
 
-	find_threshold(attack, histograms);
+	find_hit_range(attack, histograms);
 
 	return histograms;
 }
 
-void FC::histogram(CacheTimingAttack& attack, const char* filename, unsigned int num_samples){
+hit_miss_map FC::histogram(CacheTimingAttack& attack, const char* filename, unsigned int num_samples){
 
 	hit_miss_map map = calibrate(attack, num_samples);
 
 	pimpl->visualizer.to_csv(map, filename);
+
+	return map;
 }
 
 FC::FlushCalibrator() : pimpl(std::make_unique<FC::impl>()){

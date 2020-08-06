@@ -5,7 +5,7 @@ DEPS=../cache_timing_attack/cache_timing_attack_final.o
 
 LD_FLAGS:=-lgtest_main -lgtest -lpthread
 
-.PHONY: test basic_clean clean done runner
+.PHONY: test basic_clean clean done runner $(DEPS)
 
 test: CXXFLAGS := -fPIC -g -O0
 test: runner

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import csv
+import mplcursors
 
 class Plotter():
 
@@ -95,6 +96,8 @@ class Plotter():
         for field in [ key for key in l.keys() if key != x_axis_field ]:
 
             plt.plot(l[x_axis_field], l[field], label = field)
+
+        mplcursors.cursor(hover=True)
 
         plt.ylabel(ylabel)
         plt.xlabel(xlabel)

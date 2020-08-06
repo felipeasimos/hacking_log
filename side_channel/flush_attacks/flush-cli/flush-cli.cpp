@@ -45,8 +45,10 @@ bool validate_arguments(unsigned int argc, char** argv){
 		if( strlen(argv[3]) > 2 && argv[3][0] == '0' && argv[3][1] == 'x' && all_xdigits( &argv[3][2] ) ){
 
 			printf("third argument must be an hexadecimal number\n");
+			printf(USAGE);
 			return false;
 		}
+
 	} else {
 
 		printf("Wrong number of argumnets\n");
@@ -82,9 +84,8 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type){
 
 	FlushCalibrator calibrator = FlushCalibrator();
 
-	calibrator.histogram(*attack, "test.csv", 10000000);
-
-	printf("threshold-> %u\n", attack->threshold);
+	printf("CALIBRATING. This can take a minute or two...\n");
+	calibrator.histogram(*attack, "test.csv");
 
 	return std::move(attack);
 }
@@ -103,6 +104,7 @@ int main(int argc, char** argv){
 
 	std::unique_ptr<CTA> attack = prepare_attack(attack_type);
 
+	printf("hit range: (%u,%u)\n", attack->hit_begin, attack->hit_end);
 	printf("waiting for an access...\n");
 	attack->call_when_offset_is_accessed(executable.c_str(), offset, notify_access);
 

@@ -8,10 +8,9 @@ struct CTA::impl{
 
 void CTA::handle_lambda_calls(std::function<bool (unsigned int n_calls, void* addr)> func, void* addr) const {
 
-	unsigned int n_calls=0;
+	unsigned int n_calls = 0;
 
 	do{
-
 		while( !was_accessed(addr) ) n_calls++;
 
 	}while( func(n_calls, addr) );
@@ -25,7 +24,6 @@ std::tuple<int, size_t> CTA::open_executable(const char* executable) const {
 	if( !size ) throw std::ios_base::failure("Couldn't open executable");
 	return { fd, size };
 }
-
 
 std::tuple<void*, size_t> CTA::mmap_file(int fd, size_t map_size) const {
 
@@ -44,9 +42,9 @@ std::tuple<void*, size_t> CTA::mmap_file(int fd, size_t map_size) const {
 
 bool CTA::was_accessed(void* addr) const {
 
-	bool fast_execution = probe(addr) <= threshold;
+	unsigned int t = probe(addr);
 
-	return hit_is_faster ? fast_execution : !fast_execution;
+	return hit_begin <= t && t <= hit_end;
 }
 
 void CTA::wait_for_access(void* addr) const {
@@ -124,16 +122,16 @@ CTA::~CacheTimingAttack()=default;
 CTA::CacheTimingAttack(const CTA& other) :
 	pimpl(std::make_unique<CTA::impl>(*other.pimpl)){
 
-		threshold = other.threshold;
-		hit_is_faster = other.hit_is_faster;
-	}
+		hit_begin = other.hit_begin;
+		hit_end = other.hit_end;
+}
 
 CTA& CTA::operator=(const CTA& other) {
 
 	*pimpl = *other.pimpl;
 
-	threshold = other.threshold;
-	hit_is_faster = other.hit_is_faster;
+	hit_begin = other.hit_begin;
+	hit_end = other.hit_end;
 
 	return *this;
 }

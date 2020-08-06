@@ -56,11 +56,6 @@ void Visualizer::to_csv(hit_miss_map& map, const char* filename){
 
 	for( auto const& [ x, hit_miss ] : map ){
 
-		if( x > farthest_peak_x &&
-				hit_miss.first < MIN_HILL_VALUE &&
-				hit_miss.second < MIN_HILL_VALUE )
-			break;
-
 		csv_write_row(
 				file,
 				std::vector{
@@ -69,6 +64,10 @@ void Visualizer::to_csv(hit_miss_map& map, const char* filename){
 					std::to_string(hit_miss.second)
 				}
 			);
+
+		if( x > farthest_peak_x &&
+				hit_miss.first < MIN_HILL_VALUE &&
+				hit_miss.second < MIN_HILL_VALUE ) break;
 	}
 
 	fclose(file);

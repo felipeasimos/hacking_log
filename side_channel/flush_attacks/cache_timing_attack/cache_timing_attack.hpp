@@ -25,8 +25,8 @@ class CacheTimingAttack {
 		std::tuple<void*, size_t> mmap_file(int fd, size_t size) const;
 	public:
 
-		bool hit_is_faster = true;
-		unsigned int threshold=0;
+		unsigned int hit_begin=0;
+		unsigned int hit_end=0;
 
 		bool was_accessed(void* addr) const;
 

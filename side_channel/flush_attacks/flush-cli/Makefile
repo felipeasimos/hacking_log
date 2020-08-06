@@ -6,7 +6,7 @@ DEPS:=../flush_flush/flush_flush_final.o ../flush_reload/flush_reload_final.o \
 
 LD_FLAGS:=-lgtest_main -lgtest -lpthread
 
-.PHONY: test basic_clean clean done runner plot
+.PHONY: test basic_clean clean done runner plot $(DEPS)
 
 all: CXXFLAGS := -O3 -fPIC
 all: flush-cli
