@@ -6,14 +6,14 @@ struct CTA::impl{
 
 };
 
-void CTA::handle_lambda_calls(std::function<bool (unsigned int n_calls, void* addr)> func, void* addr) const {
+void CTA::handle_lambda_calls(std::function<bool (unsigned int time, void* addr)> func, void* addr) const {
 
-	unsigned int n_calls = 0;
+	unsigned int time = 0;
 
 	do{
-		while( !was_accessed(addr) ) n_calls++;
-
-	}while( func(n_calls, addr) );
+		time = wait_for_access( addr );
+		
+	}while( func(time, addr) );
 }
 
 std::tuple<int, size_t> CTA::open_executable(const char* executable) const {
@@ -47,18 +47,31 @@ bool CTA::was_accessed(void* addr) const {
 	return hit_begin <= t && t <= hit_end;
 }
 
-void CTA::wait_for_access(void* addr) const {
+bool CTA::was_accessed(unsigned int timestamp) const {
 
-	while( !was_accessed(addr) );
+	return hit_begin <= timestamp && timestamp <= hit_end;
 }
 
-void CTA::call_when_offset_is_accessed(const char* executable, unsigned int offset, std::function<bool (unsigned int n_calls, void* addr)> func) const {
+unsigned int CTA::wait_for_access(void* addr) const {
+
+	unsigned int time=0;
+
+	do{
+	
+		time=probe(addr);
+
+	}while( !was_accessed(time) );
+
+	return time;
+}
+
+void CTA::call_when_offset_is_accessed(const char* executable, unsigned int offset, std::function<bool (unsigned int time, void* addr)> func) const {
 
 	auto [ fd, size ] = open_executable(executable);
 
 	auto [ base_address, map_size ] = mmap_file(fd, size);
 
-	unsigned int n_calls=0;
+	unsigned int time=0;
 
 	handle_lambda_calls(func, (char*)base_address+offset);
 	

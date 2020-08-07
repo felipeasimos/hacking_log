@@ -18,7 +18,7 @@ class CacheTimingAttack {
 		struct impl;
 		std::unique_ptr<impl> pimpl;
 
-		void handle_lambda_calls(std::function<bool (unsigned int n_calls, void* addr)>, void* addr) const;
+		void handle_lambda_calls(std::function<bool (unsigned int time, void* addr)>, void* addr) const;
 
 		std::tuple<int, size_t> open_executable(const char* executable) const;
 
@@ -30,11 +30,13 @@ class CacheTimingAttack {
 
 		bool was_accessed(void* addr) const;
 
-		void wait_for_access(void* addr) const;
+		bool was_accessed(unsigned int timestamp) const;
+
+		unsigned int wait_for_access(void* addr) const;
 
 		//return false in the given function to stop execution,
 		//return true to wait for another access
-		void call_when_offset_is_accessed(const char* executable, unsigned int offset, std::function<bool (unsigned int n_calls, void* addr)>) const;
+		void call_when_offset_is_accessed(const char* executable, unsigned int offset, std::function<bool (unsigned int time, void* addr)>) const;
 
 		unsigned int time() const;
 		void flush(void* addr) const;

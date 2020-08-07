@@ -90,9 +90,9 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type){
 	return std::move(attack);
 }
 
-bool notify_access(unsigned int n_calls, void* addr){
+bool notify_access(unsigned int time, void* addr){
 
-	printf("offset accessed! %u\n", n_calls);
+	printf("offset accessed! time for access: %u\n", time);
 	return true;
 }
 

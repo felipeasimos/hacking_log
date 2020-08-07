@@ -43,7 +43,6 @@ class FlushCalibrator {
 		//minimum chance of a probe being
 		//classified as a true positive
 		//according to collected data
-		//(if you get only one point, this is not guaranteed)
 		double sensibility = 1.0;
 
 		hit_miss_map calibrate(
