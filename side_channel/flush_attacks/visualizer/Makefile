@@ -10,7 +10,7 @@ test: runner
 	$(MAKE) basic_clean
 	./runner
 
-done: CXXFLAGS := -O3 -fPIC
+done: CXXFLAGS := -O2 -fPIC
 done: visualizer_final.o
 
 visualizer_final.o: $(object_files)

@@ -2,15 +2,18 @@
 
 using FF=FlushFlush;
 
-void FF::operation(void* addr) const {
+void FF::operation() const {
 
+	flush();
+	/*
 	asm volatile ("clflush (%0)\n"
 			:
-			: "r" (addr)
+			: "r" (pimpl->addr)
 			:
-		);
+		);*/
 }
 
-FF::FlushFlush() : CacheTimingAttack(){};
+FF::FlushFlush(const char* exec, unsigned int offset) :
+	CacheTimingAttack(exec, offset){};
 
 FF::FlushFlush(const FF& other) : CacheTimingAttack(other){};

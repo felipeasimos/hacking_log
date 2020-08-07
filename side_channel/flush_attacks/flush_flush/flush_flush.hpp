@@ -6,9 +6,9 @@
 class FlushFlush : public CacheTimingAttack {
 
 	public:
-		void operation(void* addr) const;
+		void operation() const;
 
-		FlushFlush();
+		FlushFlush(const char* exec, unsigned int offset);
 
 		FlushFlush(const FlushFlush&);
 };

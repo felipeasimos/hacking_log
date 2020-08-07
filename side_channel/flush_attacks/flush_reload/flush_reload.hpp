@@ -6,9 +6,9 @@
 class FlushReload : public CacheTimingAttack {
 
 	public:
-		void operation(void* addr) const;
+		void operation() const;
 
-		FlushReload();
+		FlushReload(const char* exec, unsigned int offset);
 
 		FlushReload(const FlushReload&);
 };

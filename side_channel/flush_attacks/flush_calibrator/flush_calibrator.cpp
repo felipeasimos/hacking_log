@@ -10,24 +10,16 @@ struct FC::impl{
 	char* test_memory_base_address;
 };
 
-void FC::access_addr(void* addr){
-
-	asm volatile ("movq (%0), %%rax\n"
-			:
-			: "r" (addr)
-			: "rax");
-}
-
 unsigned int FC::hit(CacheTimingAttack& attack, void* addr){
 
-	access_addr(addr);
-	return attack.time_operation(addr);
+	attack.access();
+	return attack.time_operation();
 }
 
 unsigned int FC::miss(CacheTimingAttack& attack, void* addr){
 
-	attack.flush(addr);
-	return attack.time_operation(addr);
+	attack.flush();
+	return attack.time_operation();
 }
 
 void FC::hit_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){

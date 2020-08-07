@@ -12,7 +12,7 @@ test: runner
 	$(MAKE) basic_clean
 	./runner
 
-done: CXXFLAGS := -O3 -fPIC
+done: CXXFLAGS := -O2 -fPIC
 done: flush_reload_final.o
 
 flush_reload_final.o: $(object_files)

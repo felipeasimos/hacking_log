@@ -9,7 +9,7 @@
 #include "cache_info/cache_info.hpp"
 #include "../visualizer/visualizer.hpp"
 
-#define DEFAULT_NUM_SAMPLES 100000000
+#define DEFAULT_NUM_SAMPLES 10000000
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 

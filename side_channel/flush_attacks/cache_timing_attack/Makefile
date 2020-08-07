@@ -10,7 +10,7 @@ test: runner
 	$(MAKE) basic_clean
 	./runner
 
-done: CXXFLAGS := -O3 -fPIC
+done: CXXFLAGS := -O2 -fPIC
 done: cache_timing_attack_final.o
 	$(MAKE) basic_clean
 
