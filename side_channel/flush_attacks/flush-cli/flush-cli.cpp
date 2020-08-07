@@ -42,7 +42,7 @@ bool validate_arguments(unsigned int argc, char** argv){
 			return false;
 		}
 
-		if( strlen(argv[3]) > 2 && argv[3][0] == '0' && argv[3][1] == 'x' && all_xdigits( &argv[3][2] ) ){
+		if( strlen(argv[3]) > 2 && argv[3][0] != '0' && argv[3][1] != 'x' && all_xdigits( &argv[3][2] ) ){
 
 			printf("third argument must be an hexadecimal number\n");
 			printf(USAGE);
@@ -65,7 +65,7 @@ std::tuple<std::string, std::string, unsigned int> transform_arguments(unsigned 
 	std::string executable_path = argv[2];
 
 	unsigned int offset;
-	sprintf(argv[3], "%u", &offset);
+	sscanf(argv[3], "%x", &offset);
 
 	return { attack_type, executable_path, offset };
 }
@@ -85,7 +85,7 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type){
 	FlushCalibrator calibrator = FlushCalibrator();
 
 	printf("CALIBRATING. This can take a minute or two...\n");
-	calibrator.histogram(*attack, "test.csv");
+	calibrator.calibrate(*attack, "test.csv");
 
 	return std::move(attack);
 }
@@ -105,7 +105,7 @@ int main(int argc, char** argv){
 	std::unique_ptr<CTA> attack = prepare_attack(attack_type);
 
 	printf("hit range: (%u,%u)\n", attack->hit_begin, attack->hit_end);
-	printf("waiting for an access...\n");
+	printf("waiting for an access in '%s' at offset 0x%x...\n", executable.c_str(), offset);
 	attack->call_when_offset_is_accessed(executable.c_str(), offset, notify_access);
 
 	return 0;

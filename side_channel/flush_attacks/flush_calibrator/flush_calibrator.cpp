@@ -98,7 +98,11 @@ void FC::find_hit_range(CacheTimingAttack& attack, hit_miss_map& histograms){
 	attack.hit_end = find_right_hit_boundry(histograms, hit_peak);
 }
 
-hit_miss_map FC::calibrate(CacheTimingAttack& attack, double sensibility, unsigned int num_samples) {
+hit_miss_map FC::calibrate(
+		CacheTimingAttack& attack,
+		const char* filename,
+		double sensibility,
+		unsigned int num_samples) {
 
 	//time: { hits, misses }
 	hit_miss_map histograms;
@@ -111,16 +115,9 @@ hit_miss_map FC::calibrate(CacheTimingAttack& attack, double sensibility, unsign
 
 	find_hit_range(attack, histograms);
 
+	if( filename ) pimpl->visualizer.to_csv(histograms, filename);
+
 	return histograms;
-}
-
-hit_miss_map FC::histogram(CacheTimingAttack& attack, const char* filename, unsigned int num_samples){
-
-	hit_miss_map map = calibrate(attack, num_samples);
-
-	pimpl->visualizer.to_csv(map, filename);
-
-	return map;
 }
 
 FC::FlushCalibrator() : pimpl(std::make_unique<FC::impl>()){

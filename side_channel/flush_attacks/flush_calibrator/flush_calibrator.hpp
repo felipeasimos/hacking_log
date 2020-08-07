@@ -46,9 +46,12 @@ class FlushCalibrator {
 		//(if you get only one point, this is not guaranteed)
 		double sensibility = 1.0;
 
-		hit_miss_map calibrate(CacheTimingAttack& attack, double sensibility=0.01, unsigned int num_samples=DEFAULT_NUM_SAMPLES);
-
-		hit_miss_map histogram(CacheTimingAttack& attack, const char* filename="histogram.csv", unsigned int num_samples=DEFAULT_NUM_SAMPLES);
+		hit_miss_map calibrate(
+				CacheTimingAttack& attack,
+				const char* filename=nullptr,
+				double sensibility=1.0,
+				unsigned int num_samples=DEFAULT_NUM_SAMPLES
+				);
 
 		FlushCalibrator();
 		~FlushCalibrator();
