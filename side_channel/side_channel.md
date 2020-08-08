@@ -166,7 +166,7 @@ int probe(char *address) {
 }
 ```
 
-In the assmebly:
+In the assembly:
 
 * `address` is stored in `%ecx` ("`"c" (address)`").
 
@@ -183,9 +183,12 @@ in `%eax` and the high 32 bits in `%edx` (which we ignore, since the number is s
 from the previous counter value ("`subtl %%esi, %%eax`").
 
 * `mfence` and `lfence` are used to serialize the instruction stream (force processor
-to don't execute them in parallel). `lfence` ensures all load instructions preceding
+to don't execute them in parallel).
+
+* `lfence` ensures all load instructions preceding
 it have completed and no instruction following it executes before it has executed.
-`mfence` orders all memory accesses, fence instructions and the `clflush` instruction (
+
+* `mfence` orders all memory accesses, fence instructions and the `clflush` instruction (
 It is not ordered with respect to other functions and thus, it is not enough to ensure
 ordering).
 

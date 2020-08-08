@@ -6,32 +6,31 @@ struct FC::impl{
 
 	CacheInfo cache = CacheInfo();
 	Visualizer visualizer;
-	char* test_memory;
-	char* test_memory_base_address;
 };
 
-unsigned int FC::hit(CacheTimingAttack& attack, void* addr){
+unsigned int FC::hit(CacheTimingAttack& attack){
 
 	attack.access();
 	return attack.time_operation();
 }
 
-unsigned int FC::miss(CacheTimingAttack& attack, void* addr){
+unsigned int FC::miss(CacheTimingAttack& attack){
 
 	attack.flush();
 	return attack.time_operation();
 }
 
+
 void FC::hit_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){
 
 	for(unsigned int i=0; i < num_samples; i++)
-		map[hit(attack, pimpl->test_memory)].first++;
+		map[hit(attack)].first++;
 }
 
 void FC::miss_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){
 
 	for(unsigned int i=0; i < num_samples; i++)
-		map[miss(attack, pimpl->test_memory)].second++;
+		map[miss(attack)].second++;
 }
 
 void FC::normalize_histograms(hit_miss_map& histograms, unsigned int num_samples){
@@ -45,29 +44,32 @@ void FC::normalize_histograms(hit_miss_map& histograms, unsigned int num_samples
 
 bool FC::is_distance_enough(std::pair<double, double> hit_miss){
 
-	return !hit_miss.second ||
+	return ( !hit_miss.second ) ||
 		( hit_miss.first/
 		 (hit_miss.first+hit_miss.second) ) >= sensibility;
 }
 
 unsigned int FC::find_left_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
 
-	for(unsigned int i = peak_x; i > 0; i--)
+	unsigned int i = peak_x;
+	for(; i > 0; i--){
 
 		if( !is_distance_enough(hist[i]) )
 			return i + (peak_x!=i);
+	}
 
-	return peak_x;
+	return i;
 }
 
 unsigned int FC::find_right_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
 
-	for(unsigned int i=peak_x; i < hist.rbegin()->first; i++)
+	unsigned int i=peak_x;
+	for(; i < hist.rbegin()->first; i++)
 
 		if( !is_distance_enough(hist[i]) )
 			return i - (peak_x!=i);
 
-	return peak_x;
+	return i;
 }
 
 unsigned int FC::find_hit_peak(hit_miss_map& hist){
@@ -114,12 +116,6 @@ hit_miss_map FC::calibrate(
 
 FC::FlushCalibrator() : pimpl(std::make_unique<FC::impl>()){
 
-	//fill an entire set
-	unsigned int size = pimpl->cache.block_size() *
-				pimpl->cache.num_ways();
-
-	pimpl->test_memory_base_address = new char[ size ];
-	pimpl->test_memory = pimpl->test_memory_base_address + size/2;
 }
 
 FC::~FlushCalibrator()=default;

@@ -15,7 +15,7 @@ test: runner
 	$(MAKE) basic_clean
 	./runner
 
-done: CXXFLAGS := -O2 -fPIC
+done: CXXFLAGS := -O3 -fPIC
 done: flush_calibrator_final.o
 	$(MAKE) basic_clean
 

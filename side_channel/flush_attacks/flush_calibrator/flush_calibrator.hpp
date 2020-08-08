@@ -9,7 +9,7 @@
 #include "cache_info/cache_info.hpp"
 #include "../visualizer/visualizer.hpp"
 
-#define DEFAULT_NUM_SAMPLES 10000000
+#define DEFAULT_NUM_SAMPLES 100000000
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 
@@ -19,11 +19,8 @@ class FlushCalibrator {
 		struct impl;
 		std::unique_ptr<impl> pimpl;
 
-		void access_addr(void* addr);
-
-		unsigned int hit(CacheTimingAttack&, void* addr);
-
-		unsigned int miss(CacheTimingAttack&, void* addr);
+		unsigned int hit(CacheTimingAttack& attack);
+		unsigned int miss(CacheTimingAttack& attack);
 
 		void hit_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples);
 		void miss_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples);

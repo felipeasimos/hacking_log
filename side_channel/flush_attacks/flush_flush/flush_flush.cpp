@@ -5,12 +5,6 @@ using FF=FlushFlush;
 void FF::operation() const {
 
 	flush();
-	/*
-	asm volatile ("clflush (%0)\n"
-			:
-			: "r" (pimpl->addr)
-			:
-		);*/
 }
 
 FF::FlushFlush(const char* exec, unsigned int offset) :

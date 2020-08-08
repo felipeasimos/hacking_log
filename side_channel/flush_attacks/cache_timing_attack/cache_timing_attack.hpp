@@ -42,14 +42,13 @@ class CacheTimingAttack {
 		unsigned int time_operation() const;
 
 		bool was_accessed() const;
-
 		bool was_accessed(unsigned int timestamp) const;
 
-		unsigned int wait_for_access() const;
+		unsigned int wait_for_access(unsigned int& misses) const;
 
 		//return false in the given function to stop execution,
 		//return true to wait for another access
-		void call_when_offset_is_accessed(std::function<bool (unsigned int time, void* addr)>) const;
+		void call_when_offset_is_accessed(std::function<bool (unsigned int time, unsigned int misses)>) const;
 
 		CacheTimingAttack(const char* executable, unsigned int offset);
 		~CacheTimingAttack();

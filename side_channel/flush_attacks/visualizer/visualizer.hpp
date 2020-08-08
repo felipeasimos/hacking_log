@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#define MIN_HILL_VALUE 0.000008
+#define MIN_HILL_VALUE 0.000001
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 
