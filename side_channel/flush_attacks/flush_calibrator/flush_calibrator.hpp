@@ -9,6 +9,8 @@
 #include "cache_info/cache_info.hpp"
 #include "../visualizer/visualizer.hpp"
 
+#include <signal.h>
+
 #define DEFAULT_NUM_SAMPLES 100000000
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
@@ -28,6 +30,7 @@ class FlushCalibrator {
 		void normalize_histograms(hit_miss_map&, unsigned int num_samples);
 
 		bool is_distance_enough(std::pair<double, double> hit_miss);
+		double peak_heuristic(std::pair<double, double>);
 
 		unsigned int find_left_hit_boundry(hit_miss_map&, unsigned int peak_x);
 		unsigned int find_right_hit_boundry(hit_miss_map&, unsigned int peak_x);

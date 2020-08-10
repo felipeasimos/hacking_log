@@ -14,14 +14,24 @@
 #define CTA_TEST_EXEC "/usr/lib/x86_64-linux-gnu/gnome-calculator/libcalculator.so"
 #define CTA_TEST_OFFSET 0x27550
 
+#define CTA_ASM_HIT(var_addr, var_time, instruc)
+
+#define CTA_ASM_RDTSC_OP(instr) "mfence\n"\
+				"lfence\n"\
+				"rdtsc\n"\
+				"lfence\n"\
+				"movl %%eax, %%esi\n"\
+				instr "\n"\
+				"lfence\n"\
+				"rdtsc\n"\
+				"subl %%esi, %%eax\n"	
+
 class CacheTimingAttack {
 
 	protected:
 
 		struct impl;
 		std::unique_ptr<impl> pimpl;
-
-		virtual void operation() const;
 
 		std::tuple<int, size_t> open_executable(const char* executable) const;
 
@@ -31,16 +41,16 @@ class CacheTimingAttack {
 		unsigned int hit_begin=0;
 		unsigned int hit_end=0;
 
+		void* addr() const;
+
 		unsigned int time() const;
-
 		void flush() const;
-
 		void access() const;
 
-		unsigned int probe() const;
-
-		unsigned int time_operation() const;
-
+		virtual unsigned int time_hit(void* addr) const;
+		virtual unsigned int time_miss(void* addr) const;
+		virtual unsigned int probe(void* addr) const;
+		
 		bool was_accessed() const;
 		bool was_accessed(unsigned int timestamp) const;
 

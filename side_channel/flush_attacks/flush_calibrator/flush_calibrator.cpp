@@ -8,30 +8,20 @@ struct FC::impl{
 	Visualizer visualizer;
 };
 
-unsigned int FC::hit(CacheTimingAttack& attack){
-
-	attack.flush();
-	attack.access();
-	return attack.time_operation();
-}
-
-unsigned int FC::miss(CacheTimingAttack& attack){
-
-	attack.flush();
-	return attack.time_operation();
-}
-
-
 void FC::hit_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){
 
+	void* addr = attack.addr();
+
 	for(unsigned int i=0; i < num_samples; i++)
-		map[hit(attack)].first++;
+		map[attack.time_hit(addr)].first++;
 }
 
 void FC::miss_loop(CacheTimingAttack& attack, hit_miss_map& map, unsigned int num_samples){
 
+	void* addr = attack.addr();
+
 	for(unsigned int i=0; i < num_samples; i++)
-		map[miss(attack)].second++;
+		map[attack.time_miss(addr)].second++;
 }
 
 void FC::normalize_histograms(hit_miss_map& histograms, unsigned int num_samples){
@@ -48,6 +38,11 @@ bool FC::is_distance_enough(std::pair<double, double> hit_miss){
 	return ( !hit_miss.second ) ||
 		( hit_miss.first/
 		 (hit_miss.first+hit_miss.second) ) >= sensibility;
+}
+
+double FC::peak_heuristic(std::pair<double, double> hit_miss){
+
+	return hit_miss.first/(hit_miss.first + hit_miss.second);
 }
 
 unsigned int FC::find_left_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
@@ -77,10 +72,11 @@ unsigned int FC::find_hit_peak(hit_miss_map& hist){
 
 	std::pair<unsigned int, double> peak(0, 0.0);
 
-	for(auto const& [ x, sample ] : hist)
+	for(auto const& [ x, sample ] : hist){
 
-		if( peak.second < sample.first )
-			peak = std::make_pair(x, sample.first);
+		if( peak.second < peak_heuristic(sample))
+			peak = std::make_pair(x, peak_heuristic(sample));
+	}
 
 	return peak.first;
 }

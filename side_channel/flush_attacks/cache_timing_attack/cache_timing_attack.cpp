@@ -14,8 +14,6 @@ struct CTA::impl{
 	void* addr=nullptr;
 };
 
-void CTA::operation() const {}
-
 std::tuple<int, size_t> CTA::open_executable(const char* executable) const {
 
 	int fd = open(executable, O_RDONLY);
@@ -38,6 +36,11 @@ std::tuple<void*, size_t> CTA::mmap_file(int fd, size_t map_size) const {
 	void* base_address = mmap(nullptr, map_size, PROT_READ, MAP_SHARED, fd, 0);
 
 	return { base_address, map_size };
+}
+
+void* CTA::addr() const {
+
+	return pimpl->addr;
 }
 
 unsigned int CTA::time() const {
@@ -63,33 +66,32 @@ unsigned int CTA::time() const {
 
 void CTA::flush() const {
 
-	asm volatile("mfence; lfence; clflush 0(%0); lfence\n"
+	asm volatile(
+			"mfence\n"
+			"lfence\n"
+			"clflush 0(%0)\n"
+			"lfence\n"
 			:
-			: "r"(pimpl->addr)
-		);
+			: "c"(pimpl->addr)
+			: "rax");
 }
 
 void CTA::access() const {
 
-	asm volatile("mfence; lfence;movl (%0), %%eax; lfence\n"
+	asm volatile(
+			"mfence\n"
+			"lfence\n"
+			"movl (%0), %%eax\n"
+			"lfence\n"
 			:
-			: "r" (pimpl->addr)
-			: "eax");
+			: "r"(pimpl->addr)
+			: "eax"
+		);
 }
 
-unsigned int CTA::probe() const {
-
-	flush();
-	sched_yield(); //move this process to last in processor queue
-	return time_operation();
-}
-
-unsigned int CTA::time_operation() const {
-
-	unsigned int begin = time();
-	operation();
-	return time() - begin;
-}
+unsigned int CTA::time_hit(void* addr) const { return 0; };
+unsigned int CTA::time_miss(void* addr) const { return 0; };
+unsigned int CTA::probe(void* addr) const { return 0; };
 
 bool CTA::was_accessed(unsigned int timestamp) const {
 
@@ -102,7 +104,7 @@ unsigned int CTA::wait_for_access(unsigned int& misses) const {
 
 	do{
 		misses++;
-		time = probe();
+		time = probe(pimpl->addr);
 
 	}while( !was_accessed(time) );
 

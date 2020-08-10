@@ -124,7 +124,7 @@ int main(int argc, char** argv){
 	printf("CALIBRATING. This can take a minute or two...\n");
 	calibrator.calibrate(*attack, "test.csv", sensibility=sensibility);
 
-	printf("hit range: (%u,%u)\n", attack->hit_begin, attack->hit_end);
+	printf("hit range: (%u, %u)\n", attack->hit_begin, attack->hit_end);
 	printf("waiting for an access in '%s' at offset 0x%x...\n", executable.c_str(), offset);
 	attack->call_when_offset_is_accessed(notify_access);
 

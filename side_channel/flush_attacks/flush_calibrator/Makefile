@@ -11,13 +11,16 @@ LD_FLAGS:=-lgtest_main -lgtest -lpthread
 .PHONY: test basic_clean clean done runner $(DEPS)
 
 test: CXXFLAGS := -fPIC -g -O0
-test: runner
+test: | dummy_victim runner
 	$(MAKE) basic_clean
 	./runner
 
-done: CXXFLAGS := -O3 -fPIC
-done: flush_calibrator_final.o
+done: CXXFLAGS := -O2 -fPIC
+done: | dummy_victim flush_calibrator_final.o
 	$(MAKE) basic_clean
+
+dummy_victim: dummy_victim.c
+	$(CC) $(CXXFLAGS) $^ -o $@ $(LD_FLAGS)
 
 flush_calibrator_final.o: $(object_files) $(UNIQUE_DEPS)
 	ld -r $^ -o $@
