@@ -63,7 +63,7 @@ unsigned int CTA::time() const {
 
 void CTA::flush() const {
 
-	asm volatile("mfence; lfence; clflush (%0); lfence\n"
+	asm volatile("mfence; lfence; clflush 0(%0); lfence\n"
 			:
 			: "r"(pimpl->addr)
 		);
@@ -71,7 +71,7 @@ void CTA::flush() const {
 
 void CTA::access() const {
 
-	asm volatile("mfence;lfence;movl (%0), %%eax; lfence\n"
+	asm volatile("mfence; lfence;movl (%0), %%eax; lfence\n"
 			:
 			: "r" (pimpl->addr)
 			: "eax");
@@ -102,9 +102,7 @@ unsigned int CTA::wait_for_access(unsigned int& misses) const {
 
 	do{
 		misses++;
-		flush();
-		sched_yield();
-		time = time_operation();
+		time = probe();
 
 	}while( !was_accessed(time) );
 
@@ -117,7 +115,7 @@ void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls,
 	unsigned int misses = 0;
 
 	do{
-		misses=0;
+		misses=(unsigned int)-1;
 		time = wait_for_access(misses);
 	
 	}while( func(time, misses) );

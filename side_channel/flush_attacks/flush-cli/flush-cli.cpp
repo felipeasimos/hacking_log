@@ -96,9 +96,14 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type, std::string exec, u
 	return std::move(attack);
 }
 
+unsigned int i=0;
+unsigned int sum=0;
+
 bool notify_access(unsigned int time, unsigned int misses){
 
-	printf("offset accessed! time for access: %u, misses before hit: %u\n", time, misses);
+
+	printf("offset accessed! time for access: %u, misses: %u\n", time, misses);
+
 	return true;
 }
 

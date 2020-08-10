@@ -10,6 +10,7 @@ struct FC::impl{
 
 unsigned int FC::hit(CacheTimingAttack& attack){
 
+	attack.flush();
 	attack.access();
 	return attack.time_operation();
 }
