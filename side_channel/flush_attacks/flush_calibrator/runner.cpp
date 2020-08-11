@@ -26,7 +26,7 @@ class FlushCalibratorTest : public ::testing::Test {
 
 TEST_F(FlushCalibratorTest, calibration_flush_flush){
 
-	calibrator.calibrate(*ff, "ff.csv");
+	calibrator.calibrate(*ff, "ff.csv", 100);
 
 	printf("flush_flush hit_begin: %u\n", ff->hit_begin);
 	printf("flush_flush hit_end: %u\n", ff->hit_end);
@@ -34,7 +34,7 @@ TEST_F(FlushCalibratorTest, calibration_flush_flush){
 
 TEST_F(FlushCalibratorTest, calibration_flush_reload){
 
-	calibrator.calibrate(*fr, "fr.csv");
+	calibrator.calibrate(*fr, "fr.csv", 100);
 
 	printf("flush_reload hit_begin: %u\n", fr->hit_begin);
 	printf("flush_reload hit_end: %u\n", fr->hit_end);

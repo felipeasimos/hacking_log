@@ -123,8 +123,10 @@ void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls,
 	}while( func(time, misses) );
 }
 
-CTA::CacheTimingAttack(const char* executable, unsigned int offset) :
-	pimpl(std::make_unique<CTA::impl>()){
+void CTA::change_exec(const char* executable, unsigned int offset){
+
+	if( pimpl->fd ) close(pimpl->fd);
+	if( pimpl->mmap_base_address ) munmap(pimpl->mmap_base_address, pimpl->map_size);
 
 	pimpl->executable = executable;
 	pimpl->offset = offset;
@@ -135,7 +137,14 @@ CTA::CacheTimingAttack(const char* executable, unsigned int offset) :
 	pimpl->map_size = map_size;
 	pimpl->fd = fd;
 
-	pimpl->addr = addr;
+	pimpl->addr = ((char*)addr+offset);
+	pimpl->mmap_base_address = addr;
+}
+
+CTA::CacheTimingAttack(const char* executable, unsigned int offset) :
+	pimpl(std::make_unique<CTA::impl>()){
+
+	change_exec(executable, offset);
 }
 
 CTA::~CacheTimingAttack(){

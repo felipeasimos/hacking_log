@@ -24,6 +24,7 @@
 				instr "\n"\
 				"lfence\n"\
 				"rdtsc\n"\
+				"lfence\n"\
 				"subl %%esi, %%eax\n"	
 
 class CacheTimingAttack {
@@ -51,7 +52,6 @@ class CacheTimingAttack {
 		virtual unsigned int time_miss(void* addr) const;
 		virtual unsigned int probe(void* addr) const;
 		
-		bool was_accessed() const;
 		bool was_accessed(unsigned int timestamp) const;
 
 		unsigned int wait_for_access(unsigned int& misses) const;
@@ -59,6 +59,8 @@ class CacheTimingAttack {
 		//return false in the given function to stop execution,
 		//return true to wait for another access
 		void call_when_offset_is_accessed(std::function<bool (unsigned int time, unsigned int misses)>) const;
+
+		void change_exec(const char* executable, unsigned int offset);
 
 		CacheTimingAttack(const char* executable, unsigned int offset);
 		~CacheTimingAttack();

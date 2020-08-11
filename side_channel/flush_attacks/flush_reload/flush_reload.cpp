@@ -2,13 +2,15 @@
 
 using FR=FlushReload;
 
+#define FLUSH_RELOAD_STR "movl (%1), %%eax"
+
 unsigned int FR::time_hit(void* addr) const {
 
 	unsigned int time=0;
 
 	asm volatile (
 			"movl (%1), %%eax\n"
-			CTA_ASM_RDTSC_OP("movl (%1), %%eax")
+			CTA_ASM_RDTSC_OP(FLUSH_RELOAD_STR)
 
 			: "=a"(time)
 			: "c"(addr)
@@ -24,7 +26,7 @@ unsigned int FR::time_miss(void* addr) const {
 
 	asm volatile (
 			"clflush (%1)\n"
-			CTA_ASM_RDTSC_OP("movl (%1), %%eax")
+			CTA_ASM_RDTSC_OP(FLUSH_RELOAD_STR)
 
 			: "=a"(time)
 			: "c"(addr)
@@ -42,7 +44,7 @@ unsigned int FR::probe(void* addr) const {
 	sched_yield();
 
 	asm volatile (
-			CTA_ASM_RDTSC_OP("movl (%1), %%eax")
+			CTA_ASM_RDTSC_OP(FLUSH_RELOAD_STR)
 
 			: "=a"(time)
 			: "c"(addr)

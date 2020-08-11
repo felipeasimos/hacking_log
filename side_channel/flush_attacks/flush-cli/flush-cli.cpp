@@ -83,7 +83,7 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type, std::string exec, u
 
 	std::unique_ptr<CTA> attack;
 
-	if( attack_type == std::string("fr") ){
+	if( attack_type.find(std::string("fr")) != std::string::npos ){
 
 		printf("FlushReload choosen\n");	
 		attack = std::make_unique<FlushReload>(exec.c_str(), offset);
@@ -96,15 +96,17 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type, std::string exec, u
 	return std::move(attack);
 }
 
-unsigned int i=0;
-unsigned int sum=0;
-
 bool notify_access(unsigned int time, unsigned int misses){
 
 
 	printf("offset accessed! time for access: %u, misses: %u\n", time, misses);
 
 	return true;
+}
+
+void benchmark(CacheTimingAttack& attack, const char* filename, std::string type){
+
+	
 }
 
 int main(int argc, char** argv){
@@ -125,6 +127,9 @@ int main(int argc, char** argv){
 	calibrator.calibrate(*attack, "test.csv", sensibility=sensibility);
 
 	printf("hit range: (%u, %u)\n", attack->hit_begin, attack->hit_end);
+
+	benchmark(*attack, "benchmark.csv", attack_type);
+
 	printf("waiting for an access in '%s' at offset 0x%x...\n", executable.c_str(), offset);
 	attack->call_when_offset_is_accessed(notify_access);
 

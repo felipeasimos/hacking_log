@@ -12,6 +12,7 @@
 #include <signal.h>
 
 #define DEFAULT_NUM_SAMPLES 100000000
+#define DUMMY_VICTIM_ADDR 0x1162
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 

@@ -2,13 +2,15 @@
 
 using FF=FlushFlush;
 
+#define FLUSH_FLUSH_STR "clflush 0(%1)"
+
 unsigned int FF::time_hit(void* addr) const {
 
 	unsigned int time=0;
 
 	asm volatile (
 			"movl (%1), %%eax\n"
-			CTA_ASM_RDTSC_OP("clflush 0(%1)")
+			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)
 
 			: "=a"(time)
 			: "c"(addr)
@@ -22,9 +24,11 @@ unsigned int FF::time_miss(void* addr) const {
 
 	unsigned int time=0;
 
+	sched_yield();
+
 	asm volatile (
 			"clflush 0(%1)\n"
-			CTA_ASM_RDTSC_OP("clflush 0(%1)")
+			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)
 
 			: "=a"(time)
 			: "c"(addr)
@@ -38,10 +42,8 @@ unsigned int FF::probe(void* addr) const {
 
 	unsigned int time=0;
 
-	sched_yield();
-
 	asm volatile (
-			CTA_ASM_RDTSC_OP("clflush 0(%1)")
+			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)
 
 			: "=a"(time)
 			: "c"(addr)
