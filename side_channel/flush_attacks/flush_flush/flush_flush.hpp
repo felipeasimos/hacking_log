@@ -13,6 +13,10 @@ class FlushFlush : public CacheTimingAttack {
 		FlushFlush(const char* exec, unsigned int offset);
 
 		FlushFlush(const FlushFlush&);
+		FlushFlush(FlushFlush&&);
+
+		FlushFlush& operator=(const FlushFlush&);
+		FlushFlush& operator=(FlushFlush&&);
 };
 
 #endif

@@ -108,6 +108,6 @@ if( __name__ == "__main__" ):
 
     import sys
     if( len(sys.argv) > 1 ):
-        Plotter(sys.argv[1]).plot_keyfields('timestamp', ['address'])
+        Plotter(sys.argv[1]).plot_keyfields('timestamp', [''])
     else:
         print("usage: plotter.py <path/to/log>")

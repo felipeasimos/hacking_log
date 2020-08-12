@@ -66,8 +66,8 @@ void Visualizer::to_csv(hit_miss_map& map, const char* filename){
 			);
 
 		if( x > farthest_peak_x &&
-				hit_miss.first < MIN_HILL_VALUE &&
-				hit_miss.second < MIN_HILL_VALUE ) break;
+				hit_miss.first <= MIN_HILL_VALUE &&
+				hit_miss.second <= MIN_HILL_VALUE ) break;
 	}
 
 	fclose(file);

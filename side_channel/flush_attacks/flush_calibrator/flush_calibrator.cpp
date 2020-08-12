@@ -42,7 +42,7 @@ bool FC::is_distance_enough(std::pair<double, double> hit_miss){
 
 double FC::peak_heuristic(std::pair<double, double> hit_miss){
 
-	return hit_miss.first/(hit_miss.first + hit_miss.second);
+	return hit_miss.first/(hit_miss.first+hit_miss.second);
 }
 
 unsigned int FC::find_left_hit_boundry(hit_miss_map& hist, unsigned int peak_x){
@@ -109,6 +109,31 @@ hit_miss_map FC::calibrate(
 	if( filename ) pimpl->visualizer.to_csv(histograms, filename);
 
 	return histograms;
+}
+
+std::pair<double, double> FC::benchmark(
+		CacheTimingAttack& attack,
+		unsigned int num_samples){
+
+	double true_hit=0;
+	double true_miss=0;
+
+	unsigned int time=0;
+	void* addr = attack.addr();
+
+	for(unsigned int i=0; i < num_samples/2; i++){
+
+		time = attack.time_hit(addr);
+		if( attack.was_accessed(time) ) true_hit++;
+	}
+
+	for(unsigned int i=0; i < num_samples/2; i++){
+
+		time = attack.time_miss(addr);
+		if( attack.was_accessed(time) ) true_miss++;
+	}
+
+	return std::make_pair(2*true_hit/num_samples, 2*true_miss/num_samples);
 }
 
 FC::FlushCalibrator() : pimpl(std::make_unique<FC::impl>()){

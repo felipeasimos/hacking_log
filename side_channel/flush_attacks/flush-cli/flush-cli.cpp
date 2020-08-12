@@ -98,15 +98,9 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type, std::string exec, u
 
 bool notify_access(unsigned int time, unsigned int misses){
 
-
 	printf("offset accessed! time for access: %u, misses: %u\n", time, misses);
 
 	return true;
-}
-
-void benchmark(CacheTimingAttack& attack, const char* filename, std::string type){
-
-	
 }
 
 int main(int argc, char** argv){
@@ -122,13 +116,17 @@ int main(int argc, char** argv){
 	std::unique_ptr<CTA> attack = prepare_attack(attack_type, executable, offset);
 
 	FlushCalibrator calibrator = FlushCalibrator();
-	
+
 	printf("CALIBRATING. This can take a minute or two...\n");
-	calibrator.calibrate(*attack, "test.csv", sensibility=sensibility);
+	hit_miss_map map = calibrator.calibrate(*attack, "test.csv", sensibility=sensibility);
 
 	printf("hit range: (%u, %u)\n", attack->hit_begin, attack->hit_end);
 
-	benchmark(*attack, "benchmark.csv", attack_type);
+	printf("benchmarking...\n");
+	std::pair<double, double> results = calibrator.benchmark(*attack);
+
+	printf("true hit: %lf%%, false hit: %lf%%\n", results.first*100, ( 1 - results.second ) * 100);
+	printf("true miss: %lf%%, false miss: %lf%%\n", results.second*100, ( 1 - results.first ) * 100);
 
 	printf("waiting for an access in '%s' at offset 0x%x...\n", executable.c_str(), offset);
 	attack->call_when_offset_is_accessed(notify_access);

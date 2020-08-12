@@ -22,6 +22,7 @@
 				"lfence\n"\
 				"movl %%eax, %%esi\n"\
 				instr "\n"\
+				"mfence\n"\
 				"lfence\n"\
 				"rdtsc\n"\
 				"lfence\n"\
@@ -37,6 +38,8 @@ class CacheTimingAttack {
 		std::tuple<int, size_t> open_executable(const char* executable) const;
 
 		std::tuple<void*, size_t> mmap_file(int fd, size_t size) const;	
+
+		void compute_intensive_code(unsigned int wait_gap) const;
 	public:
 
 		unsigned int hit_begin=0;
@@ -45,6 +48,7 @@ class CacheTimingAttack {
 		void* addr() const;
 
 		unsigned int time() const;
+
 		void flush() const;
 		void access() const;
 
@@ -61,13 +65,17 @@ class CacheTimingAttack {
 		void call_when_offset_is_accessed(std::function<bool (unsigned int time, unsigned int misses)>) const;
 
 		void change_exec(const char* executable, unsigned int offset);
+		void alloc_exec(const char* executable, unsigned int offset);
 
+		CacheTimingAttack();
 		CacheTimingAttack(const char* executable, unsigned int offset);
 		~CacheTimingAttack();
 
 		CacheTimingAttack(const CacheTimingAttack&);
+		CacheTimingAttack(CacheTimingAttack&&);
 
 		CacheTimingAttack& operator=(const CacheTimingAttack& other);
+		CacheTimingAttack& operator=(CacheTimingAttack&& other);
 };
 
 #endif

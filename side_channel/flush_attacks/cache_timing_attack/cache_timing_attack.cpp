@@ -38,6 +38,31 @@ std::tuple<void*, size_t> CTA::mmap_file(int fd, size_t map_size) const {
 	return { base_address, map_size };
 }
 
+void CTA::compute_intensive_code(unsigned int wait_gap) const {
+
+	//the idea of this function is just to hog the CPU
+	//to avoid letting it lower the frequency (as sched_yield
+	//would do)
+
+	long x = 5, y = 6;
+
+	for( unsigned int i = 0; i < wait_gap; i++ ){
+
+		x *= y;
+		y *= x;
+		if( i % 7 == 0 ){
+			x = y / 5.2;
+			y = x * 0.81;
+		} else if( i % 20 == 0 ){
+			x = y % 13;
+			y = x % 6;
+		} else  {
+			x = y/(x+1);
+			y = 4*x/(7+3*x);
+		}
+	}
+}
+
 void* CTA::addr() const {
 
 	return pimpl->addr;
@@ -116,6 +141,8 @@ void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls,
 	unsigned int time = 0;
 	unsigned int misses = 0;
 
+	compute_intensive_code(400);
+
 	do{
 		misses=(unsigned int)-1;
 		time = wait_for_access(misses);
@@ -127,6 +154,11 @@ void CTA::change_exec(const char* executable, unsigned int offset){
 
 	if( pimpl->fd ) close(pimpl->fd);
 	if( pimpl->mmap_base_address ) munmap(pimpl->mmap_base_address, pimpl->map_size);
+
+	alloc_exec(executable, offset);
+}
+
+void CTA::alloc_exec(const char* executable, unsigned int offset){
 
 	pimpl->executable = executable;
 	pimpl->offset = offset;
@@ -141,6 +173,9 @@ void CTA::change_exec(const char* executable, unsigned int offset){
 	pimpl->mmap_base_address = addr;
 }
 
+CTA::CacheTimingAttack() :
+	pimpl(std::make_unique<CTA::impl>()){}
+
 CTA::CacheTimingAttack(const char* executable, unsigned int offset) :
 	pimpl(std::make_unique<CTA::impl>()){
 
@@ -154,18 +189,52 @@ CTA::~CacheTimingAttack(){
 }
 
 CTA::CacheTimingAttack(const CTA& other) :
-	pimpl(std::make_unique<CTA::impl>(*other.pimpl)){
+	CacheTimingAttack() {
 
-		hit_begin = other.hit_begin;
-		hit_end = other.hit_end;
+	alloc_exec(
+			other.pimpl->executable.c_str(),
+			other.pimpl->offset
+		);
+
+	hit_begin = other.hit_begin;
+	hit_end = other.hit_end;
+}
+
+CTA::CacheTimingAttack(CTA&& other) :
+	CacheTimingAttack() {
+
+	*pimpl = *other.pimpl;
+
+	other.pimpl->fd=0;
+	other.pimpl->mmap_base_address=nullptr;
 }
 
 CTA& CTA::operator=(const CTA& other) {
 
-	*pimpl = *other.pimpl;
+	alloc_exec(
+			other.pimpl->executable.c_str(),
+			other.pimpl->offset
+		);
 
 	hit_begin = other.hit_begin;
 	hit_end = other.hit_end;
+
+	return *this;
+}
+
+CTA& CTA::operator=(CTA&& other) {
+
+	if( &other == this ) return *this;
+
+	if( this->pimpl->fd )
+		close(this->pimpl->fd);
+	if( this->pimpl->mmap_base_address )
+		munmap(pimpl->mmap_base_address, pimpl->map_size);
+
+	*pimpl = *other.pimpl;
+
+	other.pimpl->fd=0;
+	other.pimpl->mmap_base_address=nullptr;
 
 	return *this;
 }

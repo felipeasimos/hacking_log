@@ -11,8 +11,7 @@
 
 #include <signal.h>
 
-#define DEFAULT_NUM_SAMPLES 100000000
-#define DUMMY_VICTIM_ADDR 0x1162
+#define DEFAULT_NUM_SAMPLES 50000000
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 
@@ -50,6 +49,11 @@ class FlushCalibrator {
 				CacheTimingAttack& attack,
 				const char* filename=nullptr,
 				double sensibility=1.0,
+				unsigned int num_samples=DEFAULT_NUM_SAMPLES
+				);
+
+		std::pair<double, double> benchmark(
+				CacheTimingAttack& attack,
 				unsigned int num_samples=DEFAULT_NUM_SAMPLES
 				);
 

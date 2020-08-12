@@ -13,6 +13,10 @@ class FlushReload : public CacheTimingAttack {
 		FlushReload(const char* exec, unsigned int offset);
 
 		FlushReload(const FlushReload&);
+		FlushReload(FlushReload&&);
+
+		FlushReload& operator=(const FlushReload&);
+		FlushReload& operator=(FlushReload&&);
 };
 
 #endif

@@ -24,8 +24,6 @@ unsigned int FF::time_miss(void* addr) const {
 
 	unsigned int time=0;
 
-	sched_yield();
-
 	asm volatile (
 			"clflush 0(%1)\n"
 			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)
@@ -42,6 +40,8 @@ unsigned int FF::probe(void* addr) const {
 
 	unsigned int time=0;
 
+	sched_yield();
+
 	asm volatile (
 			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)
 
@@ -57,3 +57,19 @@ FF::FlushFlush(const char* exec, unsigned int offset) :
 	CacheTimingAttack(exec, offset){};
 
 FF::FlushFlush(const FF& other) : CacheTimingAttack(other){};
+
+FF::FlushFlush(FF&& other) : CacheTimingAttack(other){};
+
+FF& FF::operator=(const FlushFlush& other){
+
+	*this = other;
+
+	return *this;
+};
+
+FF& FF::operator=(FlushFlush&& other){
+
+	*this = other;
+
+	return *this;
+};

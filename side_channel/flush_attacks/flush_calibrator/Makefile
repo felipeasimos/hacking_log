@@ -19,6 +19,9 @@ done: CXXFLAGS := -O3 -fPIC
 done: flush_calibrator_final.o
 	$(MAKE) basic_clean
 
+dummy_victim: dummy_victim.c
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 flush_calibrator_final.o: $(object_files) $(UNIQUE_DEPS)
 	ld -r $^ -o $@
 

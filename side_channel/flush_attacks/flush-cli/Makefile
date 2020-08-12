@@ -8,7 +8,7 @@ LD_FLAGS:=-lgtest_main -lgtest -lpthread
 
 .PHONY: test basic_clean clean done runner plot $(DEPS)
 
-all: CXXFLAGS := -O2 -fPIC
+all: CXXFLAGS := -O3 -fPIC
 all: flush-cli
 	$(MAKE) clean
 
