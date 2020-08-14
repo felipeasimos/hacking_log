@@ -38,8 +38,6 @@ class CacheTimingAttack {
 		std::tuple<int, size_t> open_executable(const char* executable) const;
 
 		std::tuple<void*, size_t> mmap_file(int fd, size_t size) const;	
-
-		void compute_intensive_code(unsigned int wait_gap) const;
 	public:
 
 		unsigned int hit_begin=0;

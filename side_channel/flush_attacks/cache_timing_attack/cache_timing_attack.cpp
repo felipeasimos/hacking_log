@@ -38,31 +38,6 @@ std::tuple<void*, size_t> CTA::mmap_file(int fd, size_t map_size) const {
 	return { base_address, map_size };
 }
 
-void CTA::compute_intensive_code(unsigned int wait_gap) const {
-
-	//the idea of this function is just to hog the CPU
-	//to avoid letting it lower the frequency (as sched_yield
-	//would do)
-
-	long x = 5, y = 6;
-
-	for( unsigned int i = 0; i < wait_gap; i++ ){
-
-		x *= y;
-		y *= x;
-		if( i % 7 == 0 ){
-			x = y / 5.2;
-			y = x * 0.81;
-		} else if( i % 20 == 0 ){
-			x = y % 13;
-			y = x % 6;
-		} else  {
-			x = y/(x+1);
-			y = 4*x/(7+3*x);
-		}
-	}
-}
-
 void* CTA::addr() const {
 
 	return pimpl->addr;
@@ -141,7 +116,7 @@ void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls,
 	unsigned int time = 0;
 	unsigned int misses = 0;
 
-	compute_intensive_code(400);
+	flush();
 
 	do{
 		misses=(unsigned int)-1;
