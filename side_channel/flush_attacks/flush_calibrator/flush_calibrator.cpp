@@ -4,7 +4,6 @@ using FC = FlushCalibrator;
 
 struct FC::impl{
 
-	CacheInfo cache = CacheInfo();
 	Visualizer visualizer;
 };
 

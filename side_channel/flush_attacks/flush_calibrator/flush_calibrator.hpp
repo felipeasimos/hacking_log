@@ -6,7 +6,6 @@
 #include <utility>
 
 #include "../cache_timing_attack/cache_timing_attack.hpp"
-#include "cache_info/cache_info.hpp"
 #include "../visualizer/visualizer.hpp"
 
 #include <signal.h>
