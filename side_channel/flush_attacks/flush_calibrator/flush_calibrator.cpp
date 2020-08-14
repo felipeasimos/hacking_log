@@ -129,7 +129,7 @@ std::pair<double, double> FC::benchmark(
 	for(unsigned int i=0; i < num_samples/2; i++){
 
 		time = attack.time_miss(addr);
-		if( attack.was_accessed(time) ) true_miss++;
+		if( !attack.was_accessed(time) ) true_miss++;
 	}
 
 	return std::make_pair(2*true_hit/num_samples, 2*true_miss/num_samples);
