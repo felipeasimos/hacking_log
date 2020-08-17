@@ -12,6 +12,8 @@ struct CTA::impl{
 	size_t map_size=0;
 
 	void* addr=nullptr;
+
+	CacheInfo cache_info = CacheInfo();
 };
 
 std::tuple<int, size_t> CTA::open_executable(const char* executable) const {
@@ -76,6 +78,18 @@ void CTA::flush() const {
 			: "rax");
 }
 
+void CTA::flush(void* addr) const {
+
+	asm volatile(
+			"mfence\n"
+			"lfence\n"
+			"clflush 0(%0)\n"
+			"lfence\n"
+			:
+			: "c"(addr)
+			: "rax");
+}
+
 void CTA::access() const {
 
 	asm volatile(
@@ -85,6 +99,19 @@ void CTA::access() const {
 			"lfence\n"
 			:
 			: "r"(pimpl->addr)
+			: "eax"
+		);
+}
+
+void CTA::access(void* addr) const {
+
+	asm volatile(
+			"mfence\n"
+			"lfence\n"
+			"movl (%0), %%eax\n"
+			"lfence\n"
+			:
+			: "r"(addr)
 			: "eax"
 		);
 }
@@ -104,6 +131,7 @@ unsigned int CTA::wait_for_access(unsigned int& misses) const {
 
 	do{
 		misses++;
+
 		time = probe(pimpl->addr);
 
 	}while( !was_accessed(time) );
@@ -123,6 +151,52 @@ void CTA::call_when_offset_is_accessed(std::function<bool (unsigned int n_calls,
 		time = wait_for_access(misses);
 	
 	}while( func(time, misses) );
+}
+
+void CTA::prime(char* final_addr) const {
+
+	unsigned int cache_line_size = pimpl->cache_info.block_size();
+
+	for( char* i=(char*)pimpl->addr; i < final_addr; i+=cache_line_size)
+		access(i);
+}
+
+
+bool CTA::probe(char* final_addr, std::function<bool (unsigned int time, unsigned int offset)> func) const{
+
+	unsigned int cache_line_size = pimpl->cache_info.block_size();
+
+	for( char* i=(char*)pimpl->addr; i < final_addr; i += cache_line_size){
+
+		unsigned int time = probe(i);
+
+		if( was_accessed(time) &&
+			!func(time, i - (char*)pimpl->addr))
+			return false;
+	}
+
+	return true;
+}
+
+void CTA::prime_probe(std::function<bool (unsigned int time, unsigned int offset)> func) const{
+
+	long unsigned int space_after_addr = pimpl->map_size - (
+			(long unsigned int)pimpl->addr -
+			(long unsigned int)pimpl->mmap_base_address
+		);
+
+	char* final_addr = std::min(
+			(long unsigned int)pimpl->cache_info.total_mem_size(),
+			space_after_addr
+		) + (char*)pimpl->addr;
+
+	do{
+		prime(final_addr);
+
+		sched_yield();
+		flush(pimpl->addr);
+
+	}while( probe(final_addr, func) );
 }
 
 void CTA::change_exec(const char* executable, unsigned int offset){

@@ -25,7 +25,7 @@ unsigned int FR::time_miss(void* addr) const {
 	unsigned int time=0;
 
 	asm volatile (
-			"clflush (%1)\n"
+			"clflush 0(%1)\n"
 			CTA_ASM_RDTSC_OP(FLUSH_RELOAD_STR)
 
 			: "=a"(time)
@@ -39,8 +39,6 @@ unsigned int FR::time_miss(void* addr) const {
 unsigned int FR::probe(void* addr) const {
 
 	unsigned int time=0;
-
-	sched_yield();
 
 	asm volatile (
 			CTA_ASM_RDTSC_OP(FLUSH_RELOAD_STR)

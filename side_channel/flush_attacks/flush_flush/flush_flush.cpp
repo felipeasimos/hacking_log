@@ -6,7 +6,7 @@ using FF=FlushFlush;
 
 unsigned int FF::time_hit(void* addr) const {
 
-	unsigned int time=0;
+	volatile unsigned int time=0;
 
 	asm volatile (
 			"movl (%1), %%eax\n"
@@ -22,7 +22,8 @@ unsigned int FF::time_hit(void* addr) const {
 
 unsigned int FF::time_miss(void* addr) const {
 
-	unsigned int time=0;
+	volatile unsigned int time=0;
+
 
 	asm volatile (
 			"clflush 0(%1)\n"
@@ -38,9 +39,7 @@ unsigned int FF::time_miss(void* addr) const {
 
 unsigned int FF::probe(void* addr) const {
 
-	unsigned int time=0;
-
-	sched_yield();
+	volatile unsigned int time=0;
 
 	asm volatile (
 			CTA_ASM_RDTSC_OP(FLUSH_FLUSH_STR)

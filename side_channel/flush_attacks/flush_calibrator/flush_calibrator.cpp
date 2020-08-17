@@ -41,7 +41,7 @@ bool FC::is_distance_enough(std::pair<double, double> hit_miss){
 
 double FC::peak_heuristic(std::pair<double, double> hit_miss){
 
-	return hit_miss.first/(hit_miss.first+hit_miss.second);
+	return hit_miss.first;//(hit_miss.first+hit_miss.second);
 }
 
 unsigned int FC::find_left_hit_boundry(hit_miss_map& hist, unsigned int peak_x){

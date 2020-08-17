@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "cache_info/cache_info.hpp"
+
 #define CTA_TEST_EXEC "/usr/lib/x86_64-linux-gnu/gnome-calculator/libcalculator.so"
 #define CTA_TEST_OFFSET 0x27550
 
@@ -48,7 +50,9 @@ class CacheTimingAttack {
 		unsigned int time() const;
 
 		void flush() const;
+		void flush(void* addr) const;
 		void access() const;
+		void access(void* addr) const;
 
 		virtual unsigned int time_hit(void* addr) const;
 		virtual unsigned int time_miss(void* addr) const;
@@ -61,6 +65,10 @@ class CacheTimingAttack {
 		//return false in the given function to stop execution,
 		//return true to wait for another access
 		void call_when_offset_is_accessed(std::function<bool (unsigned int time, unsigned int misses)>) const;
+
+		void prime(char* final_addr) const;
+		bool probe(char* final_addr, std::function<bool (unsigned int time, unsigned int offset)>) const;
+		void prime_probe(std::function<bool (unsigned int time, unsigned int offset)>) const;
 
 		void change_exec(const char* executable, unsigned int offset);
 		void alloc_exec(const char* executable, unsigned int offset);

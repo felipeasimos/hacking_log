@@ -10,7 +10,7 @@
 
 #include <signal.h>
 
-#define DEFAULT_NUM_SAMPLES 50000000
+#define DEFAULT_NUM_SAMPLES 100000000
 
 using hit_miss_map = std::map<unsigned int, std::pair<double, double>>;
 
