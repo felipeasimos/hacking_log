@@ -96,13 +96,14 @@ std::unique_ptr<CTA> prepare_attack(std::string attack_type, std::string exec, u
 	return std::move(attack);
 }
 
+unsigned int c=0;
 bool notify_access(unsigned int time, unsigned int misses){
 
-	printf("offset accessed! time for access: %u, misses: %u\n", time, misses);
+	printf("counter: %u, time: %u, misses: %u\n", c++, time, misses);
 
 	return true;
 }
-unsigned int c=0;
+
 bool func(unsigned int time, unsigned int offset) {
 
 	if( offset == 0 ) printf("accessed! time: %u, offset: %u, counter: %u\n", time, offset, c++);
@@ -136,9 +137,7 @@ int main(int argc, char** argv){
 	printf("true miss: %lf%%, false miss: %lf%%\n", results.second*100, ( 1 - results.first ) * 100);
 
 	printf("waiting for an access in '%s' at offset 0x%x...\n", executable.c_str(), offset);
-	//attack->call_when_offset_is_accessed(notify_access);
-
-	attack->prime_probe(func);
+	attack->call_when_offset_is_accessed(notify_access);
 
 	return 0;
 }

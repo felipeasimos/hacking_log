@@ -133,6 +133,7 @@ unsigned int CTA::wait_for_access(unsigned int& misses) const {
 		misses++;
 
 		time = probe(pimpl->addr);
+		sched_yield();
 
 	}while( !was_accessed(time) );
 
