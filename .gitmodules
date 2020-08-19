@@ -1,0 +1,3 @@
+[submodule "side_channel/flush_attacks"]
+	path = side_channel/flush_attacks
+	url = https://github.com/asimos-bot/flush-cli.git
