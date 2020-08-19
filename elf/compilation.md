@@ -50,8 +50,8 @@ All these changes are saved in a temporary `.i` file, which normally is
 deleted after compilation. Like the others stages, the Preprocessing is
 independent: it takes in a `.c` file and produce a `.i` one, without
 caring what will happen to it. Because of it, what `gcc` does internally
-is just call a program call `cpp` (acronym for C Preprocessor) that handles
-the preprocessing phase entirely on its own.
+is just call a program called `cpp` (acronym for C Preprocessor) that
+handles the preprocessing phase entirely on its own.
 
 We can generate an `.i` file with `gcc`:
 
@@ -61,8 +61,8 @@ Or directly with `cpp`:
 
 `cpp <.c file> > <.i filename>`
 
-One important aspect of this stage is that it doesn't read actual C
-code at any point. You can easily test this: write a simple "hello world"
+One important aspect of this stage is that it doesn't read C code at any
+point. You can easily test this: write a simple "hello world"
 program. If you type `#inclde` instead of `#include`, `gcc -E` and `cpp`
 will point out this is invalid syntax. However, if you type `man`
 instead of `main` or `in` instead of `int`, no error messages will be
@@ -71,8 +71,8 @@ displayed.
 ### Compilation
 
 Yes, the second stage of compilation is also called compilation. The
-temporary preprocessed `.i` is the input given to this stage and the
-following actions are performed on it:
+temporary preprocessed `.i` file is the input given to this stage
+and the following actions are performed on it:
 
 1. Check C code for syntax errors.
 
@@ -90,10 +90,10 @@ them generate machine code directly from the preprocessed C code.
 
 Just like the in Preprocessing stage, the assembler has its own program
 that is internally called by `gcc`: `as`, which generate an ELF file
-ending with a `.o` (`.obj` in Windows) suffix called an **object** file.
+ending with a `.o` (`.obj` in Windows), called an **object** file.
 It can also be generated with `gcc -c`.
 
-`as <.s file> -o <.o filename>` outputs file is the first ELF file
+`as <.s file> -o <.o filename>` output file is the first ELF file
 produced in the compilation process. It is an relocatable ELF file,
 which means symbols like `printf` still need to be linked to their
 definitions.
