@@ -19,9 +19,9 @@ https://blog.k3170makan.com/2018/09/introduction-to-elf-format-elf-header.html
 The ELF (Executable and Linking Format) file format is used for
 object files, binaries, shared libraries and core dumps in Linux.
 
-It has two views: a linking view and a execution view. The linking view
-can be accessed by the Section Header Table and the execution view by the
-Program Header Table.
+We can look at it from two different views: a linking view and a execution
+view. The linking view can be accessed by the Section Header Table and
+the execution view by the Program Header Table.
 
 The Program Header Table has an entry for each __Segment__, while the
 Section Header Table has one for each __Section__.
@@ -47,8 +47,6 @@ Sections Headers are sometimes treated like so too. However,
 this can lead to confusion, so in this text we will refer to
 Sections as a region in the middle of the file and Section
 Headers as an entry in the Section Header Table.
-
-![ELF Dissecated](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/ELF_Executable_and_Linkable_Format_diagram_by_Ange_Albertini.png/440px-ELF_Executable_and_Linkable_Format_diagram_by_Ange_Albertini.png)
 
 ## ELF Header
 
@@ -308,7 +306,7 @@ __0x2__ (second bit) | Occupies memory during execution
 __0x4__ (third bit) | Executable
 __0x10__ (fifth bit) | Might be merged
 __0x20__ (sixth bit) | Contains null-terminated strings
-__0x40__ (seventh bit) | 
+__0x40__ (seventh bit) | 'sh\_info' contains SHT index 
 __0x80__ (eighth bit) | Preserve order after combining
 __0x100__ (ninth bit) | Non-Standard OS specific handling required
 __0x200__ (tenth bit) | Section is member of a group
