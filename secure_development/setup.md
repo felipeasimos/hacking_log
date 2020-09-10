@@ -465,7 +465,7 @@ release: all
 
 all: folders $(TARGET_FINAL)
 
-debug: CXXFLAGS += -DDEBUG -g --coverage
+debug: CXXFLAGS += -DDEBUG -g
 debug: | $(TESTS_OBJ) test all
 
 test: LDFLAGS += $(TEST_LIBS)
@@ -557,7 +557,7 @@ CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror -fPIC
 LDFLAGS := $(addprefix -l,$(LIBS))
 INCLUDE := -I$(INCLUDE_DIR)
 
-TEST_LIBS := $(addprefix -l,$(TEST_LIBS))
+TEST_LIBS := $(addprefix -l,$(TEST_LIBS)) --coverage
 
 # final preparations (don't change this)
 TARGET_FINAL := $(APP_DIR)/$(TARGET)
