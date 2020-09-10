@@ -617,4 +617,11 @@ $(TESTS_OBJ): $(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp
 
 ## Conclusion
 
-I hope this gives you an idea on how to integrate 
+You can also check a version of the final `Makefile` [here](https://gist.github.com/asimos-bot/dd3ac015efe8dcf2f08f8719e41153da).
+
+I hope this gives you an idea on how to integrate tools to
+help you write secure C code. If you intend on also doing
+a project in another language, looking for similar tools
+that work for them can really pay off.
+
+Happy Learning!
