@@ -414,7 +414,6 @@ The rest of the arguments just tell `cppcheck` to be thorough and take
 longer in the analysis if necessary:
 
 ```
-😄[13:13:56|192.168.0.6]felipe@debian:~/Coding/c++/ds$ cat Makefile 
 # folders
 ROOT_DIR :=.
 SRC_DIR := $(ROOT_DIR)/src
