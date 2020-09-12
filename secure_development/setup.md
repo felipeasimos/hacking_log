@@ -569,7 +569,7 @@ COVERAGE_COMMAND:=@$(UNTESTED_DETECTOR_COMMAND); $(GCOV_COMMAND) | awk '{ sum +=
 RUN_TESTS_COMMAND:=@valgrind -q --exit-on-first-error=yes --error-exitcode=1 --tool=memcheck\
 		--show-reachable=yes --leak-check=yes --track-origins=yes $(TEST_TARGET_FINAL)
 STATIC_ANALYSIS_COMMAND:=@cppcheck --addon=cert --addon=y2038 --addon=threadsafety --addon=naming \
-	$(INCLUDE) --suppress=missingIncludeSystem --bug-hunting --quiet --enable=all $(SRCS) $(TESTS_SRC)
+	$(INCLUDE) --suppress=missingIncludeSystem --bug-hunting --quiet --enable=all $(SRC) $(TESTS_SRC)
 
 .PHONY: all folders clean debug release test
 
