@@ -77,14 +77,14 @@ and [here (quora)](https://www.quora.com/What-does-Linux-process-state-I-mean-in
 This is how processes change from one state to another:
            
 ```
-       /-----> S -------\
+       .-----> S -------.
        |       ^        |
        |       |        |
-       V       V        V
+       v       v        v
 D <--> R <---> T -----> Z 
        |                ^ 
        |                |
-       \----------------/
+       `----------------´
 ```
 
 ## A Story about Adopted Zombie Children
